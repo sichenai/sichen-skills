@@ -1,4 +1,4 @@
-# agent-skills
+# sichen-skills
 
 一组经过真实项目验证的 Claude Code / Agent Skills（SKILL.md 开放标准，兼容 Claude Code、Codex CLI、Cursor、OpenClaw 等 20+ Agent）。
 
@@ -9,20 +9,20 @@
 ### 方式一：npx（推荐，自动安装到 ~/.claude/skills/）
 
 ```bash
-npx skills add sichenai/agent-skills
+npx skills add sichenai/sichen-skills
 ```
 
 ### 方式二：手动复制
 
 ```bash
-git clone https://github.com/sichenai/agent-skills.git
-cp -r agent-skills/skills/* ~/.claude/skills/
+git clone https://github.com/sichenai/sichen-skills.git
+cp -r sichen-skills/skills/* ~/.claude/skills/
 ```
 
 或逐个复制需要的 skill：
 
 ```bash
-cp -r agent-skills/skills/new-convo-handoff ~/.claude/skills/
+cp -r sichen-skills/skills/new-convo-handoff ~/.claude/skills/
 ```
 
 ### 方式三：单个文件

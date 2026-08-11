@@ -29,6 +29,16 @@ cp -r sichen-skills/skills/new-convo-handoff ~/.claude/skills/
 
 直接打开对应 skill 目录，复制 `SKILL.md` 到 `~/.claude/skills/<skill-name>/SKILL.md`，重启 Agent 即可。
 
+## 更新
+
+Skill 是静态文件，**无自动更新机制**——按你的安装方式手动更新：
+
+- **npx 方式**：重跑 `npx skills add sichenai/sichen-skills`（每次拉取远端最新版，覆盖旧版）
+- **手动复制**：`git pull` 后重新复制对应 skill 目录覆盖
+- **单文件**：直接替换 `SKILL.md`
+
+每个 skill 的 `version` 字段（frontmatter）在修复/升级时递增，可据此判断本地版本是否落后于远端。
+
 ## Skill 清单
 
 | Skill | 一句话 | 适用场景 |

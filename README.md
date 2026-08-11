@@ -36,6 +36,7 @@ cp -r sichen-skills/skills/new-convo-handoff ~/.claude/skills/
 | [new-convo-handoff](./skills/new-convo-handoff/SKILL.md) | 上下文太长时，生成一份"指针式启动指令"，让新会话无需复述历史即可接手长项目 | 长项目接力、新开对话交接 |
 | [first-principles](./skills/first-principles/SKILL.md) | 第一性原理分析模式：剥离假设→回到基本事实→从底层重建推理链 | 决策分析、方案评估、被类比带偏时 |
 | [clarify-until-clear](./skills/clarify-until-clear/SKILL.md) | 反复澄清确认模式：只在"不问就很可能做错"时提问，最小充分提问，收敛后动手 | 需求模糊、意图不明、大任务启动前 |
+| [browser-login-reuse](./skills/browser-login-reuse/SKILL.md) | 浏览器自动化登录态复用：playwright-cli --persistent 持久 profile，登录一次之后复用，AI 替你操作需要登录的网站 | 控制台查额度、面板配置、表单提交、上传文件等事务性操作 |
 
 ## 设计原则
 

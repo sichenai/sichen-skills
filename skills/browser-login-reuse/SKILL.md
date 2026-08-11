@@ -1,6 +1,6 @@
 ---
 name: browser-login-reuse
-version: 1.0.0
+version: 1.0.1
 description: 浏览器自动化登录态复用。当用户需要让 AI 操作真实浏览器完成需要登录的网站任务（如登录控制台查额度、提交表单、上传文件、面板操作），且希望"登录一次、之后复用登录态、不反复登录"时使用。触发词包括：浏览器自动化、登录态复用、帮我登录、操作浏览器、AI 操作网页、persistent、playwright-cli。触发后，AI 按本 skill 用 playwright-cli --persistent 持久 profile 打开浏览器 → 用户完成一次登录（密码/验证码环节 AI 不代劳）→ 之后会话内复用该登录态，用 snapshot/click/fill 等命令操作页面，截图后用 OCR 验证。适用于 macOS（系统 Chrome），不涉及支付/银行类站点。
 agent_created: true
 ---
@@ -34,17 +34,22 @@ agent_created: true
   "browser": {
     "channel": "chrome",
     "launchOptions": {
-      "args": ["--no-sandbox", "--disable-gpu"]
+      "args": [
+        "--no-sandbox",
+        "--disable-gpu",
+        "--proxy-server=http://127.0.0.1:7890"
+      ]
     }
   },
   "outputMode": "stdout"
 }
 ```
 
-⚠️ **三个必踩的坑**（2026-08-11 实测）：
+⚠️ **四个必踩的坑**（2026-08-11 实测）：
 - **必须 `--no-sandbox`**：否则 Chrome 报 `sandbox initialization failed: Operation not permitted` 直接崩。写入 config 的 launchOptions.args
 - **不要写 `browserName`**：写了会去找未安装的 playwright chromium（报 `Browser "chromium" is not installed`）。只写 `"channel": "chrome"` 用系统 Chrome
 - **`--config` 只在 `open` 时生效**：后续 goto/snapshot/click 等命令不要带 `--config`
+- **自动化 Chrome 默认不走你的代理工具**：playwright-cli 启动的 Chrome 是独立进程，不读你日常浏览器/代理扩展/系统代理的配置，默认直连。访问国外站点（Google/GitHub 登录、部分海外面板）会报 `ERR_CONNECTION_TIMED_OUT`。解决：config 的 args 加 `--proxy-server=http://127.0.0.1:<代理端口>`——端口按你自己的代理工具填（Clash 类默认混合端口 7890，Shadowsocks 常见 1080，Surge 常见 6152），改完必须 `close` 后重新 `open` 才生效
 
 3. **macOS 用户注意**：部分环境（如沙箱内运行）下 Chrome 可能因权限限制初始化失败，此时需在 config 中加 `--no-sandbox` + 以非沙箱方式启动 Bash（如 `dangerouslyDisableSandbox`）
 
@@ -135,6 +140,7 @@ playwright-cli delete-data       # 删除持久 profile 数据（重置登录态
 | `sandbox initialization failed: Operation not permitted` | Chrome 沙箱受限 | config 加 `--no-sandbox` + 脱离沙箱运行 Bash |
 | `Browser "chromium" is not installed` | config 写了 browserName | 删除 browserName，只留 `channel: "chrome"` |
 | `Unknown option: --config`（goto 等命令） | --config 仅 open 支持 | open 时用 config，后续命令不带 |
+| 访问国外站点超时 `ERR_CONNECTION_TIMED_OUT`（如 accounts.google.com） | 自动化 Chrome 只走系统直连，没走你的代理工具 | config 的 launchOptions.args 加 `--proxy-server=http://127.0.0.1:<代理端口>`，close 后重新 open 生效 |
 | 登录后跳回登录页 | 登录态未持久化 | 确认是 `--persistent` 模式 + 用户登录后不要 delete-data |
 | snapshot 找不到元素 | 页面大被截断 / 在弹窗里 | eval 精准提取 / 查 dialog 内容 |
 

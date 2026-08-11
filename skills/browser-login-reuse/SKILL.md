@@ -1,6 +1,6 @@
 ---
 name: browser-login-reuse
-version: 1.0.1
+version: 1.0.2
 description: 浏览器自动化登录态复用。当用户需要让 AI 操作真实浏览器完成需要登录的网站任务（如登录控制台查额度、提交表单、上传文件、面板操作），且希望"登录一次、之后复用登录态、不反复登录"时使用。触发词包括：浏览器自动化、登录态复用、帮我登录、操作浏览器、AI 操作网页、persistent、playwright-cli。触发后，AI 按本 skill 用 playwright-cli --persistent 持久 profile 打开浏览器 → 用户完成一次登录（密码/验证码环节 AI 不代劳）→ 之后会话内复用该登录态，用 snapshot/click/fill 等命令操作页面，截图后用 OCR 验证。适用于 macOS（系统 Chrome），不涉及支付/银行类站点。
 agent_created: true
 ---
@@ -94,6 +94,12 @@ playwright-cli eval "() => document.title"  # 跑 JS（复杂查找用）
 playwright-cli screenshot --filename=shots/xxx.png   # 截图存证
 ```
 
+**文件上传注意**（2026-08-11 实测）：
+- `playwright-cli upload <file>` 需要先 `click` 文件选择按钮触发 chooser，且**一次只接受 1 个文件路径**（帮助写 "one or multiple" 但命令层限制单参）
+- **每次 upload 是替换不是累积**：连续 upload 只保留最后一次的文件
+- **批量上传多个文件**：用 `run-code` 一次性 `page.on('filechooser')` 监听 + click + `chooser.setFiles([...文件数组])`（CLI 会显示 modal state 但不影响 setFiles 成功）
+- **⚠️ setFiles 会丢失目录结构**：file input 不保留相对路径，`articles/a.html` 会被拍平到根目录 → 站点 URL 全 404。**需要保留目录结构的部署请用服务商 CLI/API（如 Cloudflare 用 `wrangler deploy`）**，不要用页面文件上传器
+
 **页面元素定位技巧**（复杂页面）：
 - 页面很大时 snapshot 输出被截断 → 用 `eval` 跑 JS 精准提取（如找所有含"免费"的按钮、提取表格数据）
 - `grep` 过滤 snapshot 输出定位行号，再 `sed -n 'N,Mp'` 读区间
@@ -143,6 +149,8 @@ playwright-cli delete-data       # 删除持久 profile 数据（重置登录态
 | 访问国外站点超时 `ERR_CONNECTION_TIMED_OUT`（如 accounts.google.com） | 自动化 Chrome 只走系统直连，没走你的代理工具 | config 的 launchOptions.args 加 `--proxy-server=http://127.0.0.1:<代理端口>`，close 后重新 open 生效 |
 | 登录后跳回登录页 | 登录态未持久化 | 确认是 `--persistent` 模式 + 用户登录后不要 delete-data |
 | snapshot 找不到元素 | 页面大被截断 / 在弹窗里 | eval 精准提取 / 查 dialog 内容 |
+| 连续 `upload` 只保留最后一个文件 | 每次 setFiles 替换列表 | 批量文件用 run-code `page.on('filechooser')` + `setFiles(数组)` 一次传 |
+| 上传后子目录文件全在根目录（URL 404） | file input 丢失相对路径 | 需保留目录结构用服务商 CLI/API 部署（Cloudflare = `wrangler deploy`） |
 
 ## 参考
 

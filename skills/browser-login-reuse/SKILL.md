@@ -20,13 +20,13 @@ agent_created: true
 
 ## 核心事实（2026-08-11 本机实测）
 
-- **工具**：`playwright-cli`（v0.1.17，`@playwright/cli`），装于受管 Node 22.22.2：`/Users/ts/.workbuddy/binaries/node/versions/22.22.2/bin/playwright-cli`；`agent-browser`（v0.27.0）为备选，两者浏览器二进制均已下载
+- **工具**：`playwright-cli`（`@playwright/cli`，安装 `npm install -g @playwright/cli@latest`），依赖 Node 18+；`agent-browser`（`vercel-labs/agent-browser`）为备选，两者均需浏览器二进制（`playwright-cli install-browser` 或 `agent-browser install`）
 - **方案**：`--persistent` 持久 profile（独立 profile，登录一次 → 关闭重开登录态仍在）。已实测 5 平台连续登录成功（千问/硅基流动/智谱/商汤/腾讯云）
 - **已否决**：`--extension`（接管用户日常 Chrome，干扰大、AI 可见全部登录态）不作主方案；`--profile=<日常 Chrome 目录>` 需用户完全退出 Chrome 才能用（文件锁）
 
 ## 环境准备（首次必做，一次即可）
 
-1. **建工作目录**（避免污染项目目录）：如 `/Users/ts/WorkBuddy/<会话目录>/poc/`
+1. **建工作目录**（避免污染项目目录）：如 `<your-work-dir>/poc/`
 2. **写配置文件 `cli.config.json`**（关键！）：
 
 ```json
@@ -46,7 +46,7 @@ agent_created: true
 - **不要写 `browserName`**：写了会去找未安装的 playwright chromium（报 `Browser "chromium" is not installed`）。只写 `"channel": "chrome"` 用系统 Chrome
 - **`--config` 只在 `open` 时生效**：后续 goto/snapshot/click 等命令不要带 `--config`
 
-3. **Bash 需以脱离沙箱方式运行**（Chrome 启动 GUI 需要；Bash 沙箱下 Chrome 沙箱初始化失败）
+3. **macOS 用户注意**：部分环境（如沙箱内运行）下 Chrome 可能因权限限制初始化失败，此时需在 config 中加 `--no-sandbox` + 以非沙箱方式启动 Bash（如 `dangerouslyDisableSandbox`）
 
 ## 操作流程
 
@@ -96,10 +96,13 @@ playwright-cli screenshot --filename=shots/xxx.png   # 截图存证
 
 ### Step 5 · 截图验证（红线：读图走 OCR）
 
-AI 模型不可靠读图 → 截图后用 swift-ocr 技能验证内容：
+AI 模型不可靠读图 → 截图后用 OCR 工具验证内容（如 macOS 自带 Vision 框架的 swift-ocr 脚本）：
 
 ```bash
-swift /Users/ts/.workbuddy/skills/swift-ocr/scripts/ocr.swift shots/xxx.png
+# macOS: swift-ocr（Vision 框架，无需额外安装）
+swift /path/to/swift-ocr/scripts/ocr.swift shots/xxx.png
+
+# 其他平台：用 tesseract 或在线 OCR
 ```
 
 ### Step 6 · 收尾
@@ -137,6 +140,6 @@ playwright-cli delete-data       # 删除持久 profile 数据（重置登录态
 
 ## 参考
 
-- skill 源文件：`/Users/ts/WorkBuddy/plugins/marketplaces/codebuddy-plugins-official/plugins/playwright-cli/skills/playwright-cli/SKILL.md`
-- POC 落盘实证：`/Users/ts/WorkBuddy/GEO/斯晨的AI笔记_免费Token实测_第1批记录_2026-08-11.md`（5 平台连登实测）
-- 启动指令：`/Users/ts/WorkBuddy/2026-08-10-11-29-34/新对话启动指令_浏览器自动化_2026-08-11_mark.md`
+- playwright-cli 官方 skill 文件：可在插件市场安装 `playwright-cli` 查看完整命令参考
+- 本 skill 基于 2026-08-11 真实 POC 编写，5 平台连登实证（千问、硅基流动、智谱、商汤、腾讯云）
+- 更多浏览器自动化讨论见 [sichenai/sichen-skills](https://github.com/sichenai/sichen-skills)

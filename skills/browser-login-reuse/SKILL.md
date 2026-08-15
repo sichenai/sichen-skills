@@ -1,6 +1,6 @@
 ---
 name: browser-login-reuse
-version: 1.0.2
+version: 1.0.3
 description: 浏览器自动化登录态复用。当用户需要让 AI 操作真实浏览器完成需要登录的网站任务（如登录控制台查额度、提交表单、上传文件、面板操作），且希望"登录一次、之后复用登录态、不反复登录"时使用。触发词包括：浏览器自动化、登录态复用、帮我登录、操作浏览器、AI 操作网页、persistent、playwright-cli。触发后，AI 按本 skill 用 playwright-cli --persistent 持久 profile 打开浏览器 → 用户完成一次登录（密码/验证码环节 AI 不代劳）→ 之后会话内复用该登录态，用 snapshot/click/fill 等命令操作页面，截图后用 OCR 验证。适用于 macOS（系统 Chrome），不涉及支付/银行类站点。
 agent_created: true
 ---
@@ -18,11 +18,12 @@ agent_created: true
 - 调用 API → 用 curl 更直接
 - 支付/银行/资金类站点 → 不交给 AI 会话（安全红线）
 
-## 核心事实（2026-08-11 本机实测）
+## 核心事实（2026-08-11 本机实测；2026-08-15 补充时效性边界）
 
 - **工具**：`playwright-cli`（`@playwright/cli`，安装 `npm install -g @playwright/cli@latest`），依赖 Node 18+；`agent-browser`（`vercel-labs/agent-browser`）为备选，两者均需浏览器二进制（`playwright-cli install-browser` 或 `agent-browser install`）
 - **方案**：`--persistent` 持久 profile（独立 profile，登录一次 → 关闭重开登录态仍在）。已实测 5 平台连续登录成功（千问/硅基流动/智谱/商汤/腾讯云）
 - **已否决**：`--extension`（接管用户日常 Chrome，干扰大、AI 可见全部登录态）不作主方案；`--profile=<日常 Chrome 目录>` 需用户完全退出 Chrome 才能用（文件锁）
+- **⚠️ 登录态时效性边界（2026-08-15 实测）**：「登录一次、之后复用」**不是永久承诺**。8/11 写入的硅基流动 session-token（cookie 库内仍在，有效期到 9/10）在 8/15 重新打开浏览器时**已无法加载**——页面直接跳登录页。具体根因未确诊（可能是 mock keychain 密钥与写入时不匹配、chrome 版本升级导致加密格式变化、或浏览器档案被其他操作污染）。**实操结论**：跨会话复用登录态前，先 `goto` 目标站点验证是否还在登录态（snapshot 看是否跳登录页），失效则让用户重新登录。不要假设「上次登录过 = 现在还能用」
 
 ## 环境准备（首次必做，一次即可）
 
@@ -148,6 +149,7 @@ playwright-cli delete-data       # 删除持久 profile 数据（重置登录态
 | `Unknown option: --config`（goto 等命令） | --config 仅 open 支持 | open 时用 config，后续命令不带 |
 | 访问国外站点超时 `ERR_CONNECTION_TIMED_OUT`（如 accounts.google.com） | 自动化 Chrome 只走系统直连，没走你的代理工具 | config 的 launchOptions.args 加 `--proxy-server=http://127.0.0.1:<代理端口>`，close 后重新 open 生效 |
 | 登录后跳回登录页 | 登录态未持久化 | 确认是 `--persistent` 模式 + 用户登录后不要 delete-data |
+| **跨会话打开后直接跳登录页**（cookie 库里 token 还在） | 登录态加密/解密失效（具体根因未确诊，见「时效性边界」） | 让用户重新登录一次，不要假设「上次登录过 = 现在还能用」 |
 | snapshot 找不到元素 | 页面大被截断 / 在弹窗里 | eval 精准提取 / 查 dialog 内容 |
 | 连续 `upload` 只保留最后一个文件 | 每次 setFiles 替换列表 | 批量文件用 run-code `page.on('filechooser')` + `setFiles(数组)` 一次传 |
 | 上传后子目录文件全在根目录（URL 404） | file input 丢失相对路径 | 需保留目录结构用服务商 CLI/API 部署（Cloudflare = `wrangler deploy`） |

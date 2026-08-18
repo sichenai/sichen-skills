@@ -1,0 +1,83 @@
+{
+  "version": "2026-08-18.2",
+  "scope": "public",
+  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 用实时 API 探针校验输出上限与多模态（捕获虚标与漂移）；输入上限无实时探针，须在交付说明声明来源。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。",
+  "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。",
+  "models": {
+    "deepseek-v4-pro": {
+      "aliases": ["deepseek v4 pro", "ds v4 pro"],
+      "vendor": "deepseek",
+      "url": "https://api.deepseek.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "deepseek-v4-pro",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "verifiedBy": "已验证配置 (2026-08)，官方公开端点",
+      "confidence": "tested"
+    },
+    "kimi-k3": {
+      "aliases": ["kimi k3", "moonshot k3", "k3"],
+      "vendor": "moonshot",
+      "url": "https://api.moonshot.cn/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "kimi-k3",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 1048576,
+      "maxOutputTokens": 131072,
+      "verifiedBy": "已验证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)",
+      "confidence": "tested"
+    },
+    "glm-5.2": {
+      "aliases": ["glm 5.2", "智谱 glm 5.2", "zhipu glm 5.2", "智谱 5.2"],
+      "vendor": "zhipu",
+      "url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "glm-5.2",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 32000,
+      "verifiedBy": "端点为智谱官方公开通用端点（按量付费 key 通用）；本条目未整条实测，接入时以 Step 4 探针为准。Coding Plan 订阅用户改用 /api/coding/paas/v4 端点（放 local 覆盖表）",
+      "confidence": "documented"
+    },
+    "mimo-v2.5-pro": {
+      "aliases": ["mimo v2.5 pro", "小米 mimo pro", "mimo pro"],
+      "vendor": "xiaomi",
+      "url": "https://api.xiaomimimo.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "mimo-v2.5-pro",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1048576,
+      "maxOutputTokens": 131072,
+      "verifiedBy": "已验证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）",
+      "confidence": "tested"
+    },
+    "mimo-v2.5": {
+      "aliases": ["mimo v2.5", "小米 mimo", "mimo 多模态", "mimo multimodal"],
+      "vendor": "xiaomi",
+      "url": "https://api.xiaomimimo.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "mimo-v2.5",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 1048576,
+      "maxOutputTokens": 131072,
+      "verifiedBy": "已验证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用",
+      "confidence": "tested"
+    }
+  }
+}

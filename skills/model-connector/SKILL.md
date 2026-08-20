@@ -1,7 +1,7 @@
 ---
 name: model-connector
-version: 1.5.0
-description: 自定义大模型自动接入工程师（宿主无关版）。当用户说"接入自定义大模型""配置自己的大模型""把模型接入本Agent""接入工程师""接一个自己的模型"或希望把第三方/自建 OpenAI 兼容模型（DeepSeek、智谱 GLM、Kimi、硅基流动等）自动接入当前 Agent 时使用。触发后 AI 全自动完成：查注册表/读文档→定位配置位→写配置→验证，用户不手动改任何配置。核心机制：① 双层注册表（公共表 models_registry.json + 私有覆盖表 models_registry.local.json，后者打包分发时排除）——常用模型只需说名称+API Key 即可零读文档接入；② 能力矩阵按确切模型名核验、禁止从兄弟模型推断（实测：mimo-v2.5-pro 纯文本 vs mimo-v2.5 多模态）；③ 全部能力/上限值均经实时 API 探针校验——预填 supportsImages:true 时图片探针必做（防注册表漂移致能力错配），输出上限必测（防文档虚标如 MiniMax M3 标称 1M 实测 512K），输入上限无实时探针但必须在交付说明声明来源。未知模型自动退回读文档全流程。本 skill 宿主无关：默认以 WorkBuddy 为参考宿主，其他智能体按第 0.5 步适配。
+version: 1.7.0
+description: 自定义大模型自动接入工程师（宿主无关版）。当用户说"接入自定义大模型""配置自己的大模型""把模型接入本Agent""接入工程师""接一个自己的模型"或希望把第三方/自建 OpenAI 兼容模型（DeepSeek、智谱 GLM、Kimi、硅基流动等）自动接入当前 Agent 时使用。触发后 AI 全自动完成：查注册表/读文档→定位配置位→写配置→验证，用户不手动改任何配置。核心机制：① 双层注册表（公共表 models_registry.json + 私有覆盖表 models_registry.local.json，后者打包分发时排除）——常用模型只需说名称+API Key 即可零读文档接入；② 能力矩阵按确切模型名核验、禁止从兄弟模型推断（实测：mimo-v2.5-pro 纯文本 vs mimo-v2.5 多模态）；③ 全部能力/上限值均经实时 API 探针校验——预填 supportsImages:true 时图片探针必做（防注册表漂移致能力错配），输出上限必测（防文档虚标如 MiniMax M3 标称 1M 实测 512K），输入上限无实时探针但必须在交付说明声明来源；④ id 字段原样透传成 API 的 model（禁止自行加 vendor 前缀，中转站失败头号根因）+ 写配置必验宿主加载（运行中改文件 watcher 即时生效，但 UI 保存/重启可能重写，须读回+CLI 验证）。未知模型自动退回读文档全流程。本 skill 宿主无关：默认以 WorkBuddy 为参考宿主，其他智能体按第 0.5 步适配。
 agent_created: true
 ---
 
@@ -60,6 +60,8 @@ agent_created: true
 ### 3. 填配置
 严格按文档示例把字段写进去，特别注意：
 - URL 末尾 `/v1`、Bearer 前缀、模型名大小写与文档**完全一致**
+- **`id` 字段 = API 请求的 `model` 字段，宿主原样透传（中转站失败的头号根因）**：WorkBuddy 源码坐实——`stripCustomLocalModelPrefix` 只剥 `custom-local:` 前缀（`slice(13)`），**不剥 `vendor/` 前缀**，id 其余部分**原样**成为发给 API 的 `model`。所以 `id` 必须**精确等于**中转站要求的 model 字符串（大小写、含/不含厂商前缀一字不差）。⚠️ **中转站 model 命名规范不统一**：腾讯 Token Plan 要 `deepseek/deepseek-v4-pro-0813`（带 `deepseek/` 前缀），商汤 SenseNova 要 `deepseek-v4-flash`（平铺不带前缀）。**禁止自行给 id 加 `vendor/` 前缀**——写 `sensenova/deepseek-v4-flash` 会让宿主把整串当 model 发出，中转站返 400/404。id 取值以 Step 1 文档原文或 Step 4 探针为准；注册表的 `modelId` 字段才是要写进宿主 `id` 的值，别误用注册表的「id 键」（可能带 vendor 前缀）。
+- **`vendor` 是元数据标签，不参与请求路由**（2026-08-20 源码实证，推翻此前"vendor 填错导致调用失败"的误诊）：WorkBuddy 对自定义模型用 `url` + `apiKey` + `id`（→model）三个字段路由，`normalizeCustomModel` 只做「加 custom 标签 + 解析环境变量」，请求构造中无任何 vendor 路由逻辑；此前在 app.asar 里用 strings 搜到的 `getVendorPrefix` 实为 css-tree 的 CSS 前缀代码，与模型无关（误读）。vendor 仅用于 UI 分组展示。故 vendor 填「提供 url 的一方」（中转站如 `sensenova`）只为分组合理，**填成原厂名不会导致调用失败**——把失败归因于 vendor 是误诊，真因是上方 id 前缀透传 + 下方「配置持久性」。建议 vendor 仍填「提供 url 的一方」保持分组正确，但别指望它决定成败。
 - **能力字段如实填写**（本 skill 对原始版本的修复点）：
   - 文档**未声明**支持图片输出 → `supportsImages: false`，绝不为了"显得支持"而误填 `true`
   - 同理适用于工具调用、推理等能力字段
@@ -69,10 +71,12 @@ agent_created: true
   - 文档**未给出** → **绝不允许静默臆测一个偏小的数字当事实写死**（实测曾默认填 `128000 / 8000`，而模型实际支持 `1024000 / 384000`，差 8 倍，直接把上下文窗口压短）。必须二选一：
     ① 用**单条提问**向用户索取正确上限；
     ② 若用户也未知，填入一个基于模型家族公开范围的**估值**，并在交付说明里**高亮标注"Token 上限为待核实估值，很可能需上调"**，不得伪装成已确认值。
+- **配置持久性（写后必验，区分两种场景）**：WorkBuddy 对 models.json 有 file watcher（`watchFile`→`debounceSync`→`sync`），**运行中改文件会被立即重新加载**（2026-08-20 实测：改文件后 CLI `--model` 列表即刻出现 `custom-local:<id>` 新条目，且实际调用成功）。但**在 UI 模型选择器保存、或 WorkBuddy 重启时，宿主会用内存配置重写文件**，未被正确加载的条目会丢失（2026-08-20 case 观察：带 `sensenova/` 前缀的 id 条目被回滚消失——注意那次 id 本就写错，可能是被 SmartMerge 过滤而非单纯回滚）。写完配置必须：① 立即读回校验写入成功；② 用下方「宿主层验证」确认宿主真的加载（而非只落盘）；③ 若条目消失 → 改走**宿主 UI 注入**（设置→模型→添加自定义模型），观察 UI 生成的 `id`/`vendor` 格式照抄。**只写文件不验宿主加载 = 虚假的"接入完成"。** 注意 models.json 有**两级**：用户级 `~/.workbuddy/models.json` 与项目级 `<workspace>/.workbuddy/models.json`，先确认目标宿主读的是哪一级。
 
 ### 4. 做验证
+- **宿主层验证（API 能通 ≠ 宿主能通，必做）**：「基础验证」是你自己用 curl/脚本直打 API，只证明 url/model/key 本身对。但中转站失败常发生在**宿主实际发出请求**这一层——id 前缀透传（`sensenova/deepseek-v4-flash` 被整串当 model 发出）、配置被回滚、vendor 误配。因此必须在宿主里**实际选该模型发一次请求**，从宿主日志/实际请求反推「实际发出的 `model` 字符串」与 HTTP 状态码，确认它等于 API 要求的精确值。**WorkBuddy 有两条快速验证手段**：① `codebuddy --help` 看 `--model` 选项列表——已加载的自定义模型会以 `custom-local:<id>` 形态列出（新条目出现 = 宿主已加载）；② 直接跑 `codebuddy -p -y --model custom-local:<id> "测试提示词"` 做真实请求，返回正常即链路打通。日志位置（WorkBuddy）：`~/Library/Logs/WorkBuddy/main.log`、`renderer.log`，或 `~/.workbuddy/traces/*/trace_*.json`（搜模型名/端点/返回的 error body）。**拿真错，别从字段名猜。**
 - **基础验证**：用该模型发一条最简文本请求（如「你好」），确认能正常返回。
-- **上限实测（必做，防止文档虚标导致发起会话 400）**：发一条请求，把 `max_tokens` 设为刚填入的 `maxOutputTokens` 值，确认 API 返回 200。若返回 400 `Invalid request parameters`，说明文档上限虚标——二分探测真实可用的 `max_tokens` 上限（如 524288/512K 这类 2 的幂常为硬上限），把 `maxOutputTokens` 改为实测值，并在交付里说明"文档标称 X 但 API 实际仅接受 Y"。**此步不做，用户选该模型发起会话时会直接失败。**
+- **上限实测（必做，防止文档虚标导致发起会话 400）**：发一条请求，把 `max_tokens` 设为刚填入的 `maxOutputTokens` 值，确认 API 返回 200。若返回 400 `Invalid request parameters`，说明文档上限虚标——二分探测真实可用的 `max_tokens` 上限（如 524288/512K 这类 2 的幂常为硬上限），把 `maxOutputTokens` 改为实测值，并在交付里说明"文档标称 X 但 API 实际仅接受 Y"。⚠️ **区分 429 与 400**：中转站（如 SenseNova Free 公测）配额极紧，探测会间歇性返 `429 Workspace allocated quota exceeded`（限流非拒绝），**429 必须重试，只有 400 才计为真上限拒绝**——曾因把 429 误判为 max_tokens 拒绝得到假边界（304625 而非真实 384000）。**此步不做，用户选该模型发起会话时会直接失败。**
 - **多模态验证（预填 true 或用户声称支持时必做；预填 false 时按需复验）**：用该【确切模型名】发一条带图片的请求验证（图片 URL 或 base64 均可）。判定规则：
   - 返回 **200** 且正常理解图片 → `supportsImages: true`。
   - 返回 **404** `No endpoints found that support image input`（或类似）→ 该确切模型**不支持**图片输入，`supportsImages: false`，**即使同系列兄弟模型（如 `mimo-v2.5`）支持也不能套用**。
@@ -87,6 +91,8 @@ agent_created: true
 ## 关键约束
 - **注册表是假设，探针是真相**：从注册表预填的值仅作起点；输出上限与多模态（预填 true 时）的最终取值一律以 Step 4 实时探针为准，冲突时修正并在交付说明告知用户。输入上限无实时探针，以注册表/文档值为准但必须声明来源。
 - **双层注册表隔离**：公共表只收官方公开端点；私有端点（中转/订阅专属）只进 local 覆盖表；**分发打包时必须排除 models_registry.local.json**。
+- **id 原样透传**：宿主只剥 `custom-local:` 前缀，`vendor/` 前缀与其余字符原样成为 API 的 `model` 字段。id 必须精确等于 API 要求的 model 字符串（含大小写、含/不含厂商前缀），禁止自行加 vendor 前缀——这是中转站接入失败的头号根因。
+- **写配置必验宿主加载**：只写文件 ≠ 接入成功——宿主在 UI 保存/重启时可能重写 models.json，未正确加载的条目会丢。必须读回校验 + 宿主层验证（CLI `--model` 列表 / 实际请求）；条目失效则走宿主 UI 注入，绝不把「写文件」当成交付终点。
 - **不臆测能力**：任何能力字段必须以文档原文或实测为唯一依据。
 - **不臆测 Token 上限**：`maxInputTokens` / `maxOutputTokens` 必须来自文档或用户明确给定；缺失时按上文"Token 上限"规则处理，**绝不把猜测的小值当事实静默写入**（这会悄悄把模型的真实上下文窗口压短）。
 - **不静默降级也不静默升级**：能力与实际不符、或 Token 上限为估值时，在交付说明里明确点出，让用户知情。

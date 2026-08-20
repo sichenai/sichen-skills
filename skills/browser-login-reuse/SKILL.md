@@ -16,6 +16,7 @@ agent_created: true
 **不适用的场景**（先判断再动手）：
 - 只需读静态页面 → 用 WebFetch 更轻
 - 调用 API → 用 curl 更直接
+- **只是临时打开页面点几下、不涉及登录态复用 → 用 agent-browser CLI 更合适**（本 skill 聚焦登录态复用，agent-browser 适合一次性自动化）
 - 支付/银行/资金类站点 → 不交给 AI 会话（安全红线）
 
 ## 核心事实（2026-08-11 + 2026-08-15 实测）
@@ -23,7 +24,7 @@ agent_created: true
 ### 工具
 - **playwright-core**（Node 库，比 playwright-cli 更灵活，支持 storageState API）→ `npm install playwright-core`
 - **playwright-cli**（CLI 工具，适合简单交互；不支持 storageState）→ `npm install -g @playwright/cli@latest`
-- **agent-browser**（vercel-labs，备选）→ headed 窗口登录场景在此环境不可用（见下）
+- **agent-browser**（vercel-labs，评估后不采用）→ 通用浏览器自动化 CLI（daemon 模式）；headed 登录可用但**无 storageState 导出/注入 API**，跨会话复用登录态仍需 playwright-core。已从环境移除（2026-08-15），仅留决策记录
 - 均依赖 Node 18+ 和浏览器二进制
 
 ### 两层方案（2026-08-15 实测重构）

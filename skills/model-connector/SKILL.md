@@ -1,7 +1,7 @@
 ---
 name: model-connector
-version: 1.8.0
-description: 自定义大模型自动接入工程师（宿主无关版）。当用户说"接入自定义大模型""配置自己的大模型""把模型接入本Agent""接入工程师""接一个自己的模型"或希望把第三方/自建 OpenAI 兼容模型（DeepSeek、智谱 GLM、Kimi、硅基流动等）自动接入当前 Agent 时使用。触发后 AI 全自动完成：查注册表/读文档→定位配置位→写配置→验证，用户不手动改任何配置。核心机制：⓪ 免费优先发现层——用户要免费/未指定模型/命中墓碑时，实时拉 OpenRouter pricing=0 清单+国内厂商免费额度供选（禁止凭记忆报免费信息）；① 双层注册表（公共表 models_registry.json + 私有覆盖表 models_registry.local.json，后者打包分发时排除）——常用模型只需说名称+API Key 即可零读文档接入，`retiredModels` 墓碑数组收录已下架/停止免费的模型（命中即短路并转免费发现层）；① 能力矩阵按确切模型名核验、禁止从兄弟模型推断（实测：mimo-v2.5-pro 纯文本 vs mimo-v2.5 多模态）；② 全部能力/上限值均经实时 API 探针校验——预填 supportsImages:true 时图片探针必做（防注册表漂移致能力错配），输出上限必测（防文档虚标如 MiniMax M3 标称 1M 实测 512K），输入上限无实时探针但必须在交付说明声明来源；③ id 字段原样透传成 API 的 model（禁止自行加 vendor 前缀，中转站失败头号根因）+ 写配置必验宿主加载（运行中改文件 watcher 即时生效，但 UI 保存/重启可能重写，须读回+CLI 验证）。未知模型自动退回读文档全流程。本 skill 宿主无关：默认以 WorkBuddy 为参考宿主，其他智能体按第 0.5 步适配。
+version: 1.8.1
+description: 自定义大模型自动接入工程师（宿主无关版）。当用户说"接入自定义大模型""配置自己的大模型""把模型接入本Agent""接入工程师""接一个自己的模型"或希望把第三方/自建 OpenAI 兼容模型（DeepSeek、智谱 GLM、Kimi、硅基流动等）自动接入当前 Agent 时使用。触发后 AI 全自动完成：查注册表/读文档→定位配置位→写配置→验证，用户不手动改任何配置。核心机制：⓪ 免费优先发现层——用户要免费/未指定模型/命中墓碑时，实时拉 OpenRouter pricing=0 清单+国内厂商免费额度供选（禁止凭记忆报免费信息）；① 双层注册表（公共表 models_registry.json + 私有覆盖表 models_registry.local.json，后者打包分发时排除）——常用模型只需说名称+API Key 即可零读文档接入，`retiredModels` 墓碑数组收录已下架/停止免费的模型（命中即短路并转免费发现层）；② 能力矩阵按确切模型名核验、禁止从兄弟模型推断（实测：mimo-v2.5-pro 纯文本 vs mimo-v2.5 多模态）；③ 全部能力/上限值均经实时 API 探针校验——预填 supportsImages:true 时图片探针必做（防注册表漂移致能力错配），输出上限必测（防文档虚标如 MiniMax M3 标称 1M 实测 512K），输入上限无实时探针但必须在交付说明声明来源；④ 订阅套餐≠按量付费（CodingPlan/TokenPlan 等）端点/key/model id 三者都可能不同，接入前必查用户持哪种 key（Kimi 订阅 key 打按量端点 401、智谱 CodingPlan 用专属端点）；⑤ id 字段原样透传成 API 的 model（禁止自行加 vendor 前缀，中转站失败头号根因）+ 写配置必验宿主加载（运行中改文件 watcher 即时生效，但 UI 保存/重启可能重写，须读回+CLI 验证）。未知模型自动退回读文档全流程。本 skill 宿主无关：默认以 WorkBuddy 为参考宿主，其他智能体按第 0.5 步适配。
 agent_created: true
 ---
 
@@ -67,6 +67,12 @@ agent_created: true
 - 模型标识（`model` 字段的真实取值，大小写敏感）
 - 请求/响应格式、是否 OpenAI 兼容
 - **上下文窗口 / Token 上限**：`maxInputTokens` 与 `maxOutputTokens` 的真实取值（注意单位换算：文档常写 `1M`→`1000000`、`1024K`→`1024000`、`384k`→`384000`）
+- **订阅套餐 ≠ 按量付费（关键，接入前必查）**：厂商的「套餐制」（Coding Plan / Token Plan / 订阅）与「按量付费」是两套接入参数——**专属端点 + 专属 key + model id 三者都可能不同**：
+  - **端点不同**：智谱 Coding Plan 用 `/api/coding/paas/v4`（不是通用 `/api/paas/v4`，用错报错/功能受限/不抵扣额度）；腾讯 Token Plan 用 `api.lkeap.cloud.tencent.com/plan/v3`；Kimi Code 订阅用 `api.kimi.com/coding/v1`（不是 `api.moonshot.cn`）
+  - **key 不通用**：套餐 key 通常只对套餐端点生效（实测案例：Kimi Code 订阅 key 发到按量端点直接 401），且智谱 Coding Plan 要求用套餐概览页创建的专属 key，不能混平台普通 key
+  - **model id 可能不同**：Kimi 订阅端点是 `kimi-for-coding`，而按量端点是 `kimi-k3`/`kimi-k2.7-code`——同一家族两个 id，套错按错计费方式扣费或 404
+  - **计费形态不同**：订阅多为请求配额制（Kimi Code 300-1200 次/5h 滚动窗口、30 并发上限），非 token 计费；配额接近耗尽会 429
+  - **接入前先问清用户持的是哪种 key**：套餐 key → 查套餐专属端点（注册表 local 表优先）；按量 key → 通用端点。分不清就问，禁止默认按量端点
 - **能力矩阵（关键，逐项确认，以文档原文为准，不得假设）**：
   - 图片输入（vision / image input）
   - 图片/多模态**输出**（image generation / multimodal output）

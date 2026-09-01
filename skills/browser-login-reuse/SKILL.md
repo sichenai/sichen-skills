@@ -1,11 +1,19 @@
 ---
 name: browser-login-reuse
-version: 2.0.0
-description: 浏览器自动化登录态复用。当用户需要让 AI 操作真实浏览器完成需要登录的网站任务（如登录控制台查额度、提交表单、上传文件、面板操作），且希望"登录一次、之后复用登录态、不反复登录"时使用。触发词包括：浏览器自动化、登录态复用、帮我登录、操作浏览器、AI 操作网页、persistent、playwright-cli、storageState。触发后，AI 用 playwright-core 启动 Chrome（headed 让用户登录，headless 执行操作）→ 登录后用 storageState 导出登录态 → 跨会话注入 storageState 复用，用 snapshot/click/fill/eval 等操作页面。适用于 macOS（系统 Chrome），不涉及支付/银行类站点。
+version: 2.1.0
+description: 浏览器自动化登录态复用。当用户需要让 AI 操作真实浏览器完成需要登录的网站任务（如登录控制台查额度、提交表单、上传文件、面板操作），且希望"登录一次、之后复用登录态、不反复登录"时使用。触发词包括：浏览器自动化、登录态复用、帮我登录、操作浏览器、AI 操作网页、persistent、playwright-cli、storageState。触发后先按「路由原则」选通道（API/CLI 优先 → 宿主内置浏览器优先 → 本 skill 兜底）；本 skill 方案 = playwright-core 启动 Chrome（headed 让用户登录，headless 执行操作）→ 登录后用 storageState 导出登录态 → 跨会话注入 storageState 复用，用 snapshot/click/fill/eval 等操作页面。适用于 macOS（系统 Chrome），不涉及支付/银行类站点。
 agent_created: true
 ---
 
 # 浏览器自动化登录态复用（playwright-core + storageState）
+
+## 路由原则（v2.1 新增，先选通道再动手）
+
+「让 AI 操作浏览器」不是一个能力，是「宿主 × 通道」的组合。触发本 skill 后，先按三层路由选通道，**不要默认开浏览器**：
+
+1. **第一层 · 绕开**：任务能走 API/CLI 就不开浏览器。两次实证：站点部署从「浏览器上传」改 `wrangler deploy` 后，浏览器环节整体消失；云服务商绝大多数控制台操作都有对应 CLI/API。先问一句「这事有没有官方命令行」，能省掉登录态这一整个问题域。
+2. **第二层 · 借力**：执行环境自带内置浏览器且能导入本机已登录会话的（如 Zcode 内置浏览器，2026-09-01 实证免密回登 Cloudflare 控制台，据其操作记录转引），浏览器任务优先派给该宿主执行——登录态零成本。注意会话存储不跨宿主互通，任务须在该宿主的会话内完成。
+3. **第三层 · 兜底**：都没有、或需要脚本化批量抓取/检测的 → 用本 skill（playwright-core + storageState）。登录环节需要用户本人输密码/2FA 的一律回退人工（安全红线）。
 
 ## 何时触发
 
@@ -16,7 +24,7 @@ agent_created: true
 **不适用的场景**（先判断再动手）：
 - 只需读静态页面 → 用 WebFetch 更轻
 - 调用 API → 用 curl 更直接
-- **只是临时打开页面点几下、不涉及登录态复用 → 用 agent-browser CLI 更合适**（本 skill 聚焦登录态复用，agent-browser 适合一次性自动化）
+- 执行环境有内置浏览器且已导入登录会话 → 直接在该宿主内做，不用本 skill（见上方路由原则第二层）
 - 支付/银行/资金类站点 → 不交给 AI 会话（安全红线）
 
 ## 核心事实（2026-08-11 + 2026-08-15 实测）
@@ -26,6 +34,11 @@ agent_created: true
 - **playwright-cli**（CLI 工具，适合简单交互；不支持 storageState）→ `npm install -g @playwright/cli@latest`
 - **agent-browser**（vercel-labs，评估后不采用）→ 通用浏览器自动化 CLI（daemon 模式）；headed 登录可用但**无 storageState 导出/注入 API**，跨会话复用登录态仍需 playwright-core。已从环境移除（2026-08-15），仅留决策记录
 - 均依赖 Node 18+ 和浏览器二进制
+- **宿主内置浏览器**（如 Zcode，可导入本机已登录会话）→ 登录态获取成本最低的通道，但会话存储不跨宿主互通；本 skill 与其互不替代，按路由原则分流
+
+### ⚠️ 结论适用域（2026-09-01 增补）
+
+「headed 窗口登录场景不可用」等历史结论，验证环境均为 **Bash 沙箱类宿主（WorkBuddy）+ 脚本方案**，**不是普适结论**。换宿主（内置浏览器/桌面辅助功能通道）或换通道后需重新评估，不要直接套用本文件结论否定其他方案。
 
 ### 两层方案（2026-08-15 实测重构）
 
@@ -33,6 +46,14 @@ agent_created: true
 |---|---|---|---|
 | **同会话内** | `--persistent` 独立 profile + headed 登录 → 不关浏览器，直接操作 | 一次性任务（登录→操作→结束） | ✅ 8/11 实测 5 平台 |
 | **跨会话复用** | 登录后 `storageState` 导出 → 下次 `newContext({storageState})` 注入 | 需要多次操作同一登录态 | ✅ 8/15 实测腾讯云 |
+
+### 登录态获取三条路线（2026-09-01 补全）
+
+| 路线 | 做法 | 成本 | 适用 |
+|---|---|---|---|
+| **① 导入已有会话** | 宿主内置浏览器导入本机已登录会话（Google OAuth 等），免密回登 | 最低 | 执行环境有内置浏览器且会话在位（如 Zcode，9/1 实证，据其操作记录转引） |
+| **② 注入 storageState** | 历史导出的 `auth/<平台>.json` 注入 `newContext` | 低（有存量文件时） | 本 skill 主路线，见模式 B |
+| **③ 新登录 + 导出** | headed 让用户登录（密码/2FA 本人操作）→ `ctx.storageState({path})` 导出 | 最高（需人参与） | 首次登录、②失效后重登，见模式 A |
 
 ### ⚠️ 三个已确诊的失效原因（2026-08-15 实测）
 
@@ -78,7 +99,7 @@ unset NODE_OPTIONS
 自动化 Chrome 不读系统代理。访问 Google/GitHub 等需在 args 加：
 `--proxy-server=http://127.0.0.1:<代理端口>`（Clash 默认 7890）
 
-## 操作流程（v2.0 推荐：单脚本模式）
+## 操作流程（v2.0 起推荐：单脚本模式）
 
 ### 模式 A：首次登录 + 导出登录态（headed）
 
@@ -208,14 +229,28 @@ swift /path/to/swift-ocr/scripts/ocr.swift shots/xxx.png
 | headed 窗口 20 秒消失 | 疑似 WorkBuddy「完全磁盘访问」权限影响（推断） | 回退该权限设置 |
 | 跨会话跳登录页（persistent profile） | session cookie `is_persistent=0`，close 时清除 | 用 storageState 导出/注入 |
 | 跨会话跳登录页（storageState） | 服务端 session 过期 | 重新执行模式 A 登录 |
-| 持久化 cookie 解不开（升级后） | Chrome 升级换加密密钥 | storageState 不受影响；如用 persistent profile 需重新登录 |
+| 持久化 cookie 解不开（升级后） | Chrome 升级换加密密钥 | storageState 不受影响（未跨升级实测，见下方验证清单）；如用 persistent profile 需重新登录 |
 | 访问国外站点超时 | 自动化 Chrome 不走系统代理 | args 加 `--proxy-server=http://127.0.0.1:<端口>` |
 | snapshot 找不到元素 | 页面大被截断 / 在弹窗里 | 用 `page.evaluate()` 精准提取 |
 | 上传后子目录文件全在根目录 | file input 丢失相对路径 | 用服务商 CLI/API 部署 |
+
+### 「storageState 跨 Chrome 升级是否存活」验证清单（2026-09-01 立项，待验）
+
+原理：Chrome 约 4 周自动升级一次，升级后 cookie 加密密钥变化（8/14 升级致 8/11 持久 profile 失效）。storageState 是明文 JSON、不依赖 Chrome 加密，理论上升级不受影响——**但「理论上」至今未考过试**（8/15 导出的文件已丢失，错过 9/1 的 151→152 升级验证窗口）。下次导出登录态后，按此清单顺手完成验证：
+
+1. 导出后记录当时的 Chrome 版本：`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version`，与 `auth/<平台>.json` 一起登记（写进文件名或旁边备注）
+2. 下次 Chrome 自动升级后（二进制 mtime 变化即已升级），**先用升级前导出的 storageState 注入访问该平台**
+3. 未跳登录页 → 验证通过，更新下表；跳登录页 → 可能是服务端 session 自然过期，换一个导出后 3 天内的文件重测一次再下结论
+4. 结果记入：跨升级存活 = ✅/❌（日期 + Chrome 版本对）
+
+| 验证 | 结果 | 凭证 |
+|---|---|---|
+| 跨升级存活 | ❓ 待验 | — |
 
 ## 参考
 
 - playwright-core 官方文档：storageState API
 - 本 skill 基于 2026-08-11 真实 POC（5 平台连登）+ 2026-08-15 实测重构（storageState 跨会话复用）
 - 8/15 实测平台：腾讯云 TokenHub（storageState 跨会话注入成功）
+- v2.1.0（2026-09-01）：新增路由原则（三层分流）、宿主内置浏览器路线与结论适用域声明、登录态获取三路线、跨升级验证清单——触发事件：另一宿主（Zcode）用内置浏览器十分钟免密跑通 WorkBuddy 当年三天踩坑的同需求，对比诊断后确认差异在「宿主×通道」而非方案错误
 - 更多浏览器自动化讨论见 [sichenai/sichen-skills](https://github.com/sichenai/sichen-skills)

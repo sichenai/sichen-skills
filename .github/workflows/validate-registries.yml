@@ -1,0 +1,21 @@
+name: validate-registries
+
+on:
+  push:
+    paths:
+      - "skills/model-connector/**"
+  pull_request:
+    paths:
+      - "skills/model-connector/**"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate model-connector registries
+        run: |
+          python3 skills/model-connector/scripts/validate_registry.py \
+            skills/model-connector/models_registry.json
+          python3 -m py_compile skills/model-connector/scripts/*.py

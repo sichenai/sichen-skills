@@ -1,8 +1,16 @@
 {
-  "version": "2026-08-27.1",
+  "version": "2026-09-04.1",
   "scope": "public",
-  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 用实时 API 探针校验输出上限与多模态（捕获虚标与漂移）；输入上限无实时探针，须在交付说明声明来源。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。条目可携带可选字段 `freeTier`（\"free\"=当前完全免费 / \"trial\"=注册赠送或公测期限定 / \"paid\"）与 `freeTierCheckedOn`（免费状态最近核验日期）。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代。",
-  "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。",
+  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。",
+  "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先，【条目级整体替换】而非字段级合并；覆盖后 confidence/lastVerified 以 local 条目为准，禁止互相拼字段）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。⑦ 可用 scripts/match_registry.py 执行①-④（JSON 结果即本流程输出），手动流程等价。",
+  "trustedDomains": {
+    "deepseek": ["api.deepseek.com"],
+    "moonshot": ["api.moonshot.cn", "api.kimi.com"],
+    "zhipu": ["open.bigmodel.cn"],
+    "xiaomi": ["api.xiaomimimo.com"],
+    "openrouter": ["openrouter.ai"],
+    "sensenova": ["token.sensenova.cn"]
+  },
   "models": {
     "deepseek-v4-pro": {
       "aliases": ["deepseek v4 pro", "ds v4 pro"],
@@ -16,8 +24,15 @@
       "supportsReasoning": true,
       "maxInputTokens": 1000000,
       "maxOutputTokens": 384000,
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点",
-      "confidence": "tested"
+      "lastVerified": "2026-08",
+      "confidence": "tested",
+      "altProtocol": {
+        "protocol": "anthropic-compatible",
+        "url": "https://api.deepseek.com/anthropic",
+        "status": "documented-未实测",
+        "note": "供协议失配（SKILL.md 0.6）选用；该端点 model id 可能与按量端点不同，接入前必按其文档另核并探针"
+      },
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；未见探针明细"
     },
     "kimi-k3": {
       "aliases": ["kimi k3", "moonshot k3", "k3"],
@@ -31,8 +46,12 @@
       "supportsReasoning": true,
       "maxInputTokens": 1048576,
       "maxOutputTokens": 131072,
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)",
-      "confidence": "tested"
+      "lastVerified": "2026-08",
+      "confidence": "tested",
+      "probe": {
+        "imageInput": "ok-200"
+      },
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。订阅用户走 kimi-for-coding 条目（local 表，端点/id/key 均不同）"
     },
     "glm-5.2": {
       "aliases": ["glm 5.2", "智谱 glm 5.2", "zhipu glm 5.2", "智谱 5.2"],
@@ -46,8 +65,8 @@
       "supportsReasoning": true,
       "maxInputTokens": 1000000,
       "maxOutputTokens": 32000,
-      "verifiedBy": "端点为智谱官方公开通用端点（按量付费 key 通用）；本条目未整条实测，接入时以 Step 4 探针为准。Coding Plan 订阅用户改用 /api/coding/paas/v4 端点（放 local 覆盖表）",
-      "confidence": "documented"
+      "confidence": "documented",
+      "verifiedBy": "端点为智谱官方公开通用端点（按量付费 key 通用）；本条目未整条实测，接入时按探针分级执行（documented → 全量探针）。Coding Plan 订阅用户改用 /api/coding/paas/v4 端点（放 local 覆盖表）"
     },
     "mimo-v2.5-pro": {
       "aliases": ["mimo v2.5 pro", "小米 mimo pro", "mimo pro"],
@@ -61,8 +80,12 @@
       "supportsReasoning": true,
       "maxInputTokens": 1048576,
       "maxOutputTokens": 131072,
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）",
-      "confidence": "tested"
+      "lastVerified": "2026-08",
+      "confidence": "tested",
+      "probe": {
+        "imageInput": "rejected-404"
+      },
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）。与 mimo-v2.5 仅模型名不同、能力不同，禁止套用"
     },
     "mimo-v2.5": {
       "aliases": ["mimo v2.5", "小米 mimo", "mimo 多模态", "mimo multimodal"],
@@ -76,8 +99,12 @@
       "supportsReasoning": true,
       "maxInputTokens": 1048576,
       "maxOutputTokens": 131072,
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用",
-      "confidence": "tested"
+      "lastVerified": "2026-08",
+      "confidence": "tested",
+      "probe": {
+        "imageInput": "ok-200"
+      },
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用"
     }
   },
   "retiredModels": [
@@ -86,6 +113,7 @@
       "aliases": ["ox alpha", "ox-alpha", "owl-alpha", "owl alpha"],
       "vendor": "openrouter",
       "retiredOn": "2026-08-27",
+      "recheckAfter": "2026-09-27",
       "reason": "已随匿名实验渠道整体下架，并非仅取消免费：OpenRouter /api/v1/models 全列表（417 条）已无任何 stealth/ox/owl/alpha 条目，直接查端点返回 404",
       "wasVerified": "2026-08-21 曾实测免费且全链路可用（探针 200）",
       "source": "curl 实测 2026-08-27"

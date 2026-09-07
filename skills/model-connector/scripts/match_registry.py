@@ -10,6 +10,7 @@
 
 退出码：0=唯一命中 1=未命中（退回读文档全流程） 2=多命中（单条追问二选一）
 3=墓碑命中（不预填不追问 key，转免费发现层） 4=注册表不可读（视同 0 命中退回读文档）
+5=条目级停用命中（厂商/渠道已停用，tombstone:true；不预填不追问 key，转免费发现层或读文档）
 输出：stdout 单行 JSON。
 """
 
@@ -55,6 +56,7 @@ def strip_colloquial(phrase):
 
 def match_in(merged, user):
     hits = []
+    tomb_hits = []
     for mid, m in merged.items():
         matched_via = None
         for key in [mid] + (m.get("aliases") or []):
@@ -62,11 +64,17 @@ def match_in(merged, user):
                 matched_via = key
                 break
         if matched_via:
-            hits.append({"id": mid, "matched_via": matched_via, "vendor": m.get("vendor"),
-                         "url": m.get("url"), "modelId": m.get("modelId"),
-                         "confidence": m.get("confidence"), "lastVerified": m.get("lastVerified"),
-                         "freeTier": m.get("freeTier")})
-    return hits
+            info = {"id": mid, "matched_via": matched_via, "vendor": m.get("vendor"),
+                    "url": m.get("url"), "modelId": m.get("modelId"),
+                    "confidence": m.get("confidence"), "lastVerified": m.get("lastVerified"),
+                    "freeTier": m.get("freeTier")}
+            if m.get("tombstone"):
+                info["removedOn"] = m.get("removedOn")
+                info["removedBy"] = m.get("removedBy")
+                tomb_hits.append(info)
+            else:
+                hits.append(info)
+    return hits, tomb_hits
 
 
 def main():
@@ -105,13 +113,21 @@ def main():
                              ensure_ascii=False))
             sys.exit(3)
 
-    hits = match_in(merged, user)
+    hits, tomb_hits = match_in(merged, user)
     if not hits and strip_colloquial(user) != user:
         user2 = strip_colloquial(user)
-        hits = match_in(merged, user2)
-        if hits:
+        hits2, tomb_hits2 = match_in(merged, user2)
+        if hits2 or tomb_hits2:
+            tomb_hits = tomb_hits2 if not hits2 else tomb_hits
+            hits = hits2
             user = user2 + "（剥离口语前后缀后）"
 
+    if not hits and tomb_hits:
+        print(json.dumps({"status": "disabled", "user": args.phrase,
+                          "hits": tomb_hits,
+                          "detail": "该厂商/渠道已停用（条目级墓碑），不预填不追问 key；可转免费发现层或读文档全流程"},
+                         ensure_ascii=False))
+        sys.exit(5)
     if len(hits) == 1:
         h = hits[0]
         h["entry"] = merged[h["id"]]
@@ -119,7 +135,8 @@ def main():
         sys.exit(0)
     if len(hits) > 1:
         print(json.dumps({"status": "ambiguous", "user": args.phrase, "hits": hits,
-                          "detail": "单条提问二选一，防兄弟模型能力错配"}, ensure_ascii=False))
+                          "tombstone_hits": tomb_hits,
+                          "detail": "单条提问二选一，防兄弟模型能力错配（已停用条目不参与预填）"}, ensure_ascii=False))
         sys.exit(2)
     print(json.dumps({"status": "miss", "user": args.phrase, "hits": [],
                       "detail": "0 命中，退回 Step 1-3 读文档全流程"}, ensure_ascii=False))

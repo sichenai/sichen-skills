@@ -1,5 +1,26 @@
 # model-connector 更新日志
 
+## 2026-09-07 — v1.15.0（新厂商线：MiniMax 官方直连 + 字节豆包，注册表版本 2026-09-07.4）
+
+背景：ts 点头开新厂商线（明确只做两家，Google/Anthropic 暂不做）。
+
+### 注册表（2026-09-07.3 → 2026-09-07.4）
+- **新增 `minimax-m3-official`（MiniMax 开放平台官方直连）**：国内主域 api.minimaxi.com（国际 api.minimax.io 同构），OpenAI 兼容，modelId 大写驼峰 MiniMax-M3（quirk）；原生多模态（官方 curl 示例含 image_url）；thinking adaptive + max_completion_tokens 两条方言 quirk；1M ctx 多源一致；输出上限估值高亮。与 local tokenhub 中转条目、OpenRouter :free 条目构成三方歧义，按 key 发卡方分流（familyNote 已写明）
+- **新增 `doubao-seed-2.1-pro`（字节火山方舟直连）**：端点 ark.cn-beijing.volces.com/api/v3（V3 完全兼容 OpenAI 协议，官方下线公告实证）；**最大接入坑写入 quirk：model 字段传推理接入点 ID（ep-xxx）而非模型名，modelId 为占位符 REPLACE-WITH-ENDPOINT-ID，接入时必须向用户索取其 ep- ID**；旗舰 Doubao-Seed-2.1-pro（¥6/30 每百万）+turbo/Seed-Code/Evolving 家族注记
+- **trustedDomains 补录**：minimax（api.minimaxi.com / api.minimax.io）、bytedance（ark.cn-beijing.volces.com）；校验器随即正确将 local tokenhub 中转域名标为白名单外（门禁生效实证）
+- 活跃 20 条（公共 15/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error 3 warn（均为预期的中转声明）；回归：minimax m3→三方歧义（符合分流设计）、豆包/doubao pro→unique、kimi k3 不受影响
+- 信源：zhipu-web-search std×3 + sogou×1（MiniMax 官方文档原文 URL 定点），官方 curl 示例/下线公告为一手
+
+## 2026-09-07 — v1.14.0（条目级墓碑 + 旗舰补位，注册表版本 2026-09-07.3）
+
+背景：ts 两连拍板（删除商汤；注册表补各家旗舰，第一性原理拆解后定位真实缺口）。
+
+### 注册表（2026-09-07.2 → 2026-09-07.3）
+- **商汤 SenseNova 停用（条目级墓碑机制首发）**：local 两条（sensenova/deepseek-v4-flash、sensenova/glm-5.2）标 `tombstone:true+removedOn+removedBy`，历史探针数据保留供复活复核；trustedDomains 移除 token.sensenova.cn；match_registry.py 新增 disabled 状态（exit 5，tombstone 条目剔除出命中/预填）；SKILL.md 墓碑短路节+匹配说明同步，tests #10/#14 更新
+- **阿里平台更名**：qwen-max/qwen-plus 加 `vendorNote`「千问AI平台（原阿里云百炼）」，keyIssuer 同步（信源=ts 口述+长期记忆，dashscope 端点不受影响）
+- **旗舰补位（2026-09-07 搜索核实，zhipu-web-search std×4，多源一致）**：新增 `glm-5.3`（智谱文本旗舰 8/14 发布，开放平台 API 已开放，1M/128K 官方口径，思考强制 low/high/max 三档 quirk）与 `qwen3.8-max`（千问AI平台新一代基座旗舰，ts 业务在用）；`gpt-5.6-sol` 扩 familyNote（Sol 旗舰/Terra 均衡/Luna 轻量三档，Ultra 为模式非模型）+ 品牌别名 gpt5.6。新条目均 documented、token 上限为估值高亮，接入时全量探针。OpenAI/腾讯/DeepSeek/Kimi/小米旗舰已在册（Sol/hunyuan-turbos/v4-pro/k3/mimo-v2.5-pro），无缺口
+- 活跃 18 条（公共 13/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error；匹配回归：qwen3.8→unique、glm 5.3→ambiguous（主体/flash 防套错，符合预期）、gpt5.6→unique
+
 ## 2026-09-07 — v1.13.0（渠道三元重构 + gpt4 复盘修补 + 公共表扩容六厂商）
 
 背景：gpt4 接入会话三问复盘（ts 发现）+ 公共表覆盖审查（第一性原理 + 对抗性审查双模式）。核心发现：渠道真实结构是三元（厂商直连 / 云厂商托管 / 私有中转），旧「公共=官方直连、local=中转」二元定义容纳不了云渠道，导致 key↔渠道错配 401 无防护、云渠道实测条目被分发排除两个缺陷。

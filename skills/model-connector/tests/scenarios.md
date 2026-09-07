@@ -13,11 +13,11 @@
 | 7 | 注册表 maxOutputTokens 与探针冲突 | 以探针为准修正注册表值，交付说明点出「注册表 X → 实测 Y」 |
 | 8 | 上限二分中遇 429 | 退避 2s→8s→30s，三次仍 429 → 熔断，标注「限流阻断未定界」；禁止把 429 计为上限拒绝（假边界教训：304625 vs 真实 384000） |
 | 9 | 接 MiniMax M3（文档标称输出 1M） | 全量探针；实测 512K 被接受、1M 被拒 → 写实测值，交付注明「标称 1M 实测 512K」 |
-| 10 | 接商汤 deepseek-v4-flash | id 平铺 `deepseek-v4-flash` 不带 vendor 前缀；接腾讯 TP 则 id 必须带 `deepseek/` 前缀——id 原样透传，禁止自行增删前缀 |
+| 10 | 接商汤 deepseek-v4-flash | local 条目已墓碑（2026-09-07 ts 停用商汤）：命中不预填不追问 key，告知该渠道已停用并转免费发现层/读文档流程；id 透传教训保留（腾讯 TP 要 `deepseek/` 前缀，商汤曾平铺）——id 原样透传，禁止自行增删前缀 |
 | 11 | Claude Code（Anthropic 协议宿主）接 OpenAI 兼容端点 | 走 0.6 协议失配树：先查 altProtocol/厂商双协议端点 → env shim → 都没有则明示需网关并出参数卡；禁止把 OpenAI 端点硬写进配置 |
 | 12 | 写配置后宿主条目消失（UI 保存/重启回滚） | 读回校验发现丢失 → 转宿主 UI 注入兜底；绝不把「文件已写入」当交付终点 |
 | 13 | 用户在云宿主主动粘贴 key | 提示存储风险一句，建议先用占位符验证参数格式、真实 key 留到本地宿主再填；首轮提问绝不索要 key |
-| 14 | scriptCapable 宿主说「接 glm 5」 | match_registry.py 返回 ambiguous（glm-5.2 / sensenova/glm-5.2 / glm-5.3-flash）→ 单条提问；顺带核对带 key 请求的域名 ∈ trustedDomains |
+| 14 | scriptCapable 宿主说「接 glm 5」 | match_registry.py 返回 ambiguous（glm-5.2 / glm-5.3-flash；sensenova/glm-5.2 已墓碑不参与预填）→ 单条提问；顺带核对带 key 请求的域名 ∈ trustedDomains |
 | 15 | tested 条目 lastVerified 在 14 天内重新接入 | 轻验证：仅 smoke 一次，不重测上限/多模态；用户可显式跳过，documented/过期条目必须全量探针 |
 
 ## 判定纪律

@@ -1,19 +1,45 @@
 {
-  "version": "2026-09-04.1",
+  "version": "2026-09-07.1",
   "scope": "public",
-  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。",
+  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。渠道三元结构字段：`channel`（direct=厂商直连，key=模型原厂发放 / cloud-hosted=云厂商托管渠道，key=云厂商发放，模型是别家的 / private-relay=私有中转，仅 local 表）；`keyIssuer`（该条目要求谁发的 key，字符串）；`channelNote`（渠道差异备注，key 错配症状）。【渠道铁律】快路径命中后必须向用户核对 key 发卡方与 keyIssuer 一致——云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题。",
   "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先，【条目级整体替换】而非字段级合并；覆盖后 confidence/lastVerified 以 local 条目为准，禁止互相拼字段）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。⑦ 可用 scripts/match_registry.py 执行①-④（JSON 结果即本流程输出），手动流程等价。",
   "trustedDomains": {
-    "deepseek": ["api.deepseek.com"],
-    "moonshot": ["api.moonshot.cn", "api.kimi.com"],
-    "zhipu": ["open.bigmodel.cn"],
-    "xiaomi": ["api.xiaomimimo.com"],
-    "openrouter": ["openrouter.ai"],
-    "sensenova": ["token.sensenova.cn"]
+    "deepseek": [
+      "api.deepseek.com"
+    ],
+    "moonshot": [
+      "api.moonshot.cn",
+      "api.kimi.com"
+    ],
+    "zhipu": [
+      "open.bigmodel.cn"
+    ],
+    "xiaomi": [
+      "api.xiaomimimo.com"
+    ],
+    "openrouter": [
+      "openrouter.ai"
+    ],
+    "sensenova": [
+      "token.sensenova.cn"
+    ],
+    "tencent-cloud": [
+      "api.hunyuan.cloud.tencent.com",
+      "api.lkeap.cloud.tencent.com"
+    ],
+    "aliyun": [
+      "dashscope.aliyuncs.com"
+    ],
+    "openai": [
+      "api.openai.com"
+    ]
   },
   "models": {
     "deepseek-v4-pro": {
-      "aliases": ["deepseek v4 pro", "ds v4 pro"],
+      "aliases": [
+        "deepseek v4 pro",
+        "ds v4 pro"
+      ],
       "vendor": "deepseek",
       "url": "https://api.deepseek.com/v1/chat/completions",
       "protocol": "openai-compatible",
@@ -32,10 +58,16 @@
         "status": "documented-未实测",
         "note": "供协议失配（SKILL.md 0.6）选用；该端点 model id 可能与按量端点不同，接入前必按其文档另核并探针"
       },
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；未见探针明细"
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；未见探针明细",
+      "channel": "direct",
+      "keyIssuer": "deepseek 官方平台（platform.deepseek.com）"
     },
     "kimi-k3": {
-      "aliases": ["kimi k3", "moonshot k3", "k3"],
+      "aliases": [
+        "kimi k3",
+        "moonshot k3",
+        "k3"
+      ],
       "vendor": "moonshot",
       "url": "https://api.moonshot.cn/v1/chat/completions",
       "protocol": "openai-compatible",
@@ -51,10 +83,17 @@
       "probe": {
         "imageInput": "ok-200"
       },
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。订阅用户走 kimi-for-coding 条目（local 表，端点/id/key 均不同）"
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。订阅用户走 kimi-for-coding 条目（local 表，端点/id/key 均不同）",
+      "channel": "direct",
+      "keyIssuer": "moonshot 开放平台（platform.moonshot.cn）"
     },
     "glm-5.2": {
-      "aliases": ["glm 5.2", "智谱 glm 5.2", "zhipu glm 5.2", "智谱 5.2"],
+      "aliases": [
+        "glm 5.2",
+        "智谱 glm 5.2",
+        "zhipu glm 5.2",
+        "智谱 5.2"
+      ],
       "vendor": "zhipu",
       "url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
       "protocol": "openai-compatible",
@@ -66,10 +105,16 @@
       "maxInputTokens": 1000000,
       "maxOutputTokens": 32000,
       "confidence": "documented",
-      "verifiedBy": "端点为智谱官方公开通用端点（按量付费 key 通用）；本条目未整条实测，接入时按探针分级执行（documented → 全量探针）。Coding Plan 订阅用户改用 /api/coding/paas/v4 端点（放 local 覆盖表）"
+      "verifiedBy": "端点为智谱官方公开通用端点（按量付费 key 通用）；本条目未整条实测，接入时按探针分级执行（documented → 全量探针）。Coding Plan 订阅用户改用 /api/coding/paas/v4 端点（放 local 覆盖表）",
+      "channel": "direct",
+      "keyIssuer": "智谱开放平台（open.bigmodel.cn）"
     },
     "mimo-v2.5-pro": {
-      "aliases": ["mimo v2.5 pro", "小米 mimo pro", "mimo pro"],
+      "aliases": [
+        "mimo v2.5 pro",
+        "小米 mimo pro",
+        "mimo pro"
+      ],
       "vendor": "xiaomi",
       "url": "https://api.xiaomimimo.com/v1/chat/completions",
       "protocol": "openai-compatible",
@@ -85,10 +130,17 @@
       "probe": {
         "imageInput": "rejected-404"
       },
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）。与 mimo-v2.5 仅模型名不同、能力不同，禁止套用"
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）。与 mimo-v2.5 仅模型名不同、能力不同，禁止套用",
+      "channel": "direct",
+      "keyIssuer": "小米 MiMo 开放平台"
     },
     "mimo-v2.5": {
-      "aliases": ["mimo v2.5", "小米 mimo", "mimo 多模态", "mimo multimodal"],
+      "aliases": [
+        "mimo v2.5",
+        "小米 mimo",
+        "mimo 多模态",
+        "mimo multimodal"
+      ],
       "vendor": "xiaomi",
       "url": "https://api.xiaomimimo.com/v1/chat/completions",
       "protocol": "openai-compatible",
@@ -104,19 +156,189 @@
       "probe": {
         "imageInput": "ok-200"
       },
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用"
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用",
+      "channel": "direct",
+      "keyIssuer": "小米 MiMo 开放平台"
+    },
+    "hunyuan-turbos-latest": {
+      "aliases": [
+        "hunyuan turbos",
+        "混元 turbos",
+        "腾讯混元",
+        "hunyuan"
+      ],
+      "vendor": "tencent-cloud",
+      "url": "https://api.hunyuan.cloud.tencent.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "hunyuan-turbos-latest",
+      "channel": "direct",
+      "keyIssuer": "腾讯云大模型 API 控制台（开通混元服务，接入管理页创建 OpenAI SDK 接入 key）",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 256000,
+      "maxOutputTokens": 32000,
+      "confidence": "documented",
+      "altProtocol": {
+        "protocol": "anthropic-compatible",
+        "url": "https://api.hunyuan.cloud.tencent.com/anthropic",
+        "status": "documented-未实测",
+        "note": "同主机名不同路径段（/anthropic vs /v1）；status=documented-未实测，协议失配场景选用前必须先探针"
+      },
+      "verifiedBy": "端点/model id 双源核实（2026-09-07）：腾讯云官方文章 cloud.tencent.com/developer/article/2625834 + 独立技术文档；token 上限为估值（高亮：很可能需修正），接入时全量探针"
+    },
+    "qwen-max": {
+      "aliases": [
+        "qwen max",
+        "通义千问 max",
+        "千问 max"
+      ],
+      "vendor": "aliyun",
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "qwen-max",
+      "channel": "direct",
+      "keyIssuer": "阿里云百炼（ bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 131072,
+      "maxOutputTokens": 8192,
+      "confidence": "documented",
+      "verifiedBy": "端点/兼容模式核实（2026-09-07）help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope；token 上限为估值（高亮：很可能需修正），接入时全量探针；平台另有 qwen-plus/qwen-long/qwq-plus 等 id 同端点可用"
+    },
+    "qwen-plus": {
+      "aliases": [
+        "qwen plus",
+        "通义千问 plus",
+        "千问 plus"
+      ],
+      "vendor": "aliyun",
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "qwen-plus",
+      "channel": "direct",
+      "keyIssuer": "阿里云百炼（bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 131072,
+      "maxOutputTokens": 8192,
+      "confidence": "documented",
+      "verifiedBy": "同 qwen-max（2026-09-07 官方文档核实）；token 上限为估值（高亮），接入时全量探针"
+    },
+    "gpt-5.6-sol": {
+      "aliases": [
+        "gpt 5.6 sol",
+        "openai gpt 5.6 sol"
+      ],
+      "vendor": "openai",
+      "url": "https://api.openai.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "gpt-5.6-sol",
+      "channel": "direct",
+      "keyIssuer": "OpenAI Platform（platform.openai.com）",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 400000,
+      "maxOutputTokens": 128000,
+      "confidence": "documented",
+      "verifiedBy": "厂商为 OpenAI 官方 deprecations 页指定替代模型（2026-09-07 核验）；端点为 OpenAI 通用端点；token 上限为估值（高亮：很可能需修正）。⚠️ 国内直连有支付/网络门槛，国内用户实际多经 OpenRouter 通道接入"
+    },
+    "deepseek-v4-pro-0813-cloud-tencent": {
+      "aliases": [
+        "deepseek v4 pro 0813 token plan",
+        "腾讯 token plan deepseek v4 pro",
+        "deepseek-v4-pro-0813-tp"
+      ],
+      "vendor": "tencent-cloud",
+      "url": "https://api.lkeap.cloud.tencent.com/plan/v3/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "deepseek/deepseek-v4-pro-0813",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 393216,
+      "lastVerified": "2026-08-20",
+      "confidence": "tested",
+      "probe": {
+        "outputTested": 393216,
+        "outputRejected": 524288,
+        "imageInput": "rejected-400",
+        "toolCall": "ok-200"
+      },
+      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 个人版订阅端点（腾讯云域名，非 deepseek 官方域名，发 key 前声明）；model=deepseek/deepseek-v4-pro-0813 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
+      "channel": "cloud-hosted",
+      "keyIssuer": "腾讯云（lkeap Token Plan 订阅，consola.cloud.tencent.com）",
+      "channelNote": "模型是 DeepSeek 的，key 必须是腾讯云 Token Plan 发的（sk-tp- 前缀）；DeepSeek 官方 key 打此端点无效，反向同理——key↔渠道错配 401 头号来源；vendor=tencent-cloud（按「vendor 填提供 url 的一方」规范，2026-09-07 校验脚本抓错后修正）"
+    },
+    "deepseek-v4-flash-0731-cloud-tencent": {
+      "aliases": [
+        "deepseek v4 flash 0731 token plan",
+        "腾讯 token plan deepseek v4 flash",
+        "deepseek-v4-flash-0731-tp"
+      ],
+      "vendor": "tencent-cloud",
+      "url": "https://api.lkeap.cloud.tencent.com/plan/v3/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 393216,
+      "lastVerified": "2026-08-20",
+      "confidence": "tested",
+      "probe": {
+        "outputTested": 393216,
+        "outputRejected": 524288,
+        "imageInput": "rejected-400",
+        "toolCall": "ok-200"
+      },
+      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 个人版订阅端点（腾讯云域名，发 key 前声明）；model=deepseek/deepseek-v4-flash-0731 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
+      "channel": "cloud-hosted",
+      "keyIssuer": "腾讯云（lkeap Token Plan 订阅，consola.cloud.tencent.com）",
+      "channelNote": "模型是 DeepSeek 的，key 必须是腾讯云 Token Plan 发的（sk-tp- 前缀）；DeepSeek 官方 key 打此端点无效，反向同理——key↔渠道错配 401 头号来源；vendor=tencent-cloud（按「vendor 填提供 url 的一方」规范，2026-09-07 校验脚本抓错后修正）"
     }
   },
   "retiredModels": [
     {
       "id": "stealth/ox-alpha",
-      "aliases": ["ox alpha", "ox-alpha", "owl-alpha", "owl alpha"],
+      "aliases": [
+        "ox alpha",
+        "ox-alpha",
+        "owl-alpha",
+        "owl alpha"
+      ],
       "vendor": "openrouter",
       "retiredOn": "2026-08-27",
       "recheckAfter": "2026-09-27",
       "reason": "已随匿名实验渠道整体下架，并非仅取消免费：OpenRouter /api/v1/models 全列表（417 条）已无任何 stealth/ox/owl/alpha 条目，直接查端点返回 404",
       "wasVerified": "2026-08-21 曾实测免费且全链路可用（探针 200）",
       "source": "curl 实测 2026-08-27"
+    },
+    {
+      "id": "gpt-4",
+      "aliases": [
+        "gpt4",
+        "gpt-4-0613",
+        "gpt 4"
+      ],
+      "vendor": "openai",
+      "retiredOn": "2026-10-23",
+      "recheckAfter": "2026-10-23",
+      "reason": "OpenAI 官方 deprecations 页（2026-04-22 公告 Legacy GPT model snapshots）：gpt-4（=gpt-4-0613 别名）2026-10-23 停服，官方替代模型 gpt-5.6-sol。注意：模型详情页无 deprecated 字样（仅 older 措辞），弃用信息只在 deprecations 页——两页都要查的实证案例",
+      "wasVerified": "OpenRouter 清单 2026-09-07 仍在售（转售滞后实证）",
+      "source": "developers.openai.com/api/docs/deprecations（2026-09-07 fetch）",
+      "successor": "gpt-5.6-sol"
     }
   ]
 }

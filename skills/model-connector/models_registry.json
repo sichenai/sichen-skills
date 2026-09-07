@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-07.1",
+  "version": "2026-09-07.4",
   "scope": "public",
-  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。渠道三元结构字段：`channel`（direct=厂商直连，key=模型原厂发放 / cloud-hosted=云厂商托管渠道，key=云厂商发放，模型是别家的 / private-relay=私有中转，仅 local 表）；`keyIssuer`（该条目要求谁发的 key，字符串）；`channelNote`（渠道差异备注，key 错配症状）。【渠道铁律】快路径命中后必须向用户核对 key 发卡方与 keyIssuer 一致——云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题。",
+  "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）；`tombstone`+`removedOn`+`removedBy`（local 表内已停支持条目：不再维护、不做时效核验，命中即告知已移除并转免费发现层，历史探针数据仅供复活复核）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源；随条目停支持同步移除）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。渠道三元结构字段：`channel`（direct=厂商直连，key=模型原厂发放 / cloud-hosted=云厂商托管渠道，key=云厂商发放，模型是别家的 / private-relay=私有中转，仅 local 表）；`keyIssuer`（该条目要求谁发的 key，字符串）；`channelNote`（渠道差异备注，key 错配症状）。【渠道铁律】快路径命中后必须向用户核对 key 发卡方与 keyIssuer 一致——云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题。",
   "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先，【条目级整体替换】而非字段级合并；覆盖后 confidence/lastVerified 以 local 条目为准，禁止互相拼字段）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。⑦ 可用 scripts/match_registry.py 执行①-④（JSON 结果即本流程输出），手动流程等价。",
   "trustedDomains": {
     "deepseek": [
@@ -20,9 +20,6 @@
     "openrouter": [
       "openrouter.ai"
     ],
-    "sensenova": [
-      "token.sensenova.cn"
-    ],
     "tencent-cloud": [
       "api.hunyuan.cloud.tencent.com",
       "api.lkeap.cloud.tencent.com"
@@ -32,6 +29,13 @@
     ],
     "openai": [
       "api.openai.com"
+    ],
+    "minimax": [
+      "api.minimaxi.com",
+      "api.minimax.io"
+    ],
+    "bytedance": [
+      "ark.cn-beijing.volces.com"
     ]
   },
   "models": {
@@ -195,19 +199,20 @@
         "千问 max"
       ],
       "vendor": "aliyun",
+      "vendorNote": "平台名：千问AI平台（原阿里云百炼，bailian 已更名）",
       "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
       "protocol": "openai-compatible",
       "auth": "Bearer",
       "modelId": "qwen-max",
       "channel": "direct",
-      "keyIssuer": "阿里云百炼（ bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
+      "keyIssuer": "千问AI平台（原阿里云百炼，bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
       "supportsToolCall": true,
       "supportsImages": false,
       "supportsReasoning": true,
       "maxInputTokens": 131072,
       "maxOutputTokens": 8192,
       "confidence": "documented",
-      "verifiedBy": "端点/兼容模式核实（2026-09-07）help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope；token 上限为估值（高亮：很可能需修正），接入时全量探针；平台另有 qwen-plus/qwen-long/qwq-plus 等 id 同端点可用"
+      "verifiedBy": "端点/兼容模式核实（2026-09-07）help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope；平台更名口径经 ts 口述+长期记忆佐证（原百炼→千问AI平台），端点域名 dashscope 未变；token 上限为估值（高亮：很可能需修正），接入时全量探针；平台另有 qwen-plus/qwen-long/qwq-plus 等 id 同端点可用"
     },
     "qwen-plus": {
       "aliases": [
@@ -216,24 +221,135 @@
         "千问 plus"
       ],
       "vendor": "aliyun",
+      "vendorNote": "平台名：千问AI平台（原阿里云百炼，bailian 已更名）",
       "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
       "protocol": "openai-compatible",
       "auth": "Bearer",
       "modelId": "qwen-plus",
       "channel": "direct",
-      "keyIssuer": "阿里云百炼（bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
+      "keyIssuer": "千问AI平台（原阿里云百炼，bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
       "supportsToolCall": true,
       "supportsImages": false,
       "supportsReasoning": true,
       "maxInputTokens": 131072,
       "maxOutputTokens": 8192,
       "confidence": "documented",
-      "verifiedBy": "同 qwen-max（2026-09-07 官方文档核实）；token 上限为估值（高亮），接入时全量探针"
+      "verifiedBy": "同 qwen-max（2026-09-07 官方文档核实）；平台更名口径经 ts 口述+长期记忆佐证；token 上限为估值（高亮），接入时全量探针"
+    },
+    "glm-5.3": {
+      "aliases": [
+        "glm 5.3",
+        "智谱 glm 5.3",
+        "zhipu glm 5.3",
+        "智谱 5.3"
+      ],
+      "vendor": "zhipu",
+      "url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "glm-5.3",
+      "channel": "direct",
+      "keyIssuer": "智谱开放平台（open.bigmodel.cn）",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 131072,
+      "confidence": "documented",
+      "quirks": [
+        "思考模式强制开启：仅 low/high/max 三档可调，默认与编程推荐为 max，无关闭参数"
+      ],
+      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，多源一致）：GLM-5.3 2026-08-14 发布（与 5.2 同基座，文本旗舰），API 已在开放平台正式开放调用，定价与 GLM-5.2 一致；1M 上下文/最大 128K 输出为官方文档口径，接入时全量探针。多模态在 5.3-flash（本机 local 表），5.3 主体为纯文本。Coding Plan 订阅用户走 local 表 glm-5.3-flash 同端点",
+      "familyNote": "GLM-5 系文本旗舰；GLM-5.3-Flash（320B-A18B）是首个原生多模态档（local 表在册）；说「接 glm 5.3」命中本条目，说「接 glm 5.3 flash 多模态」走 local 条目"
+    },
+    "qwen3.8-max": {
+      "aliases": [
+        "qwen 3.8 max",
+        "千问 3.8 max",
+        "qwen3.8",
+        "通义千问 3.8"
+      ],
+      "vendor": "aliyun",
+      "vendorNote": "平台名：千问AI平台（原阿里云百炼，bailian 已更名）",
+      "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "qwen3.8-max",
+      "channel": "direct",
+      "keyIssuer": "千问AI平台（原阿里云百炼，bailian.console.aliyun.com，DASHSCOPE_API_KEY）",
+      "supportsToolCall": true,
+      "supportsImages": false,
+      "supportsReasoning": true,
+      "maxInputTokens": 131072,
+      "maxOutputTokens": 8192,
+      "confidence": "documented",
+      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，阿里云官方稿件）：Qwen3.8-Max 为阿里新一代基座旗舰，已接入千问AI平台并陆续开放 Token Plan 订阅；同端点接入过 GLM-5.3/DeepSeek-V4-Pro（compatible-mode 通道实证活跃）。ts 业务在用此模型（素材库打标后端，LLM_MODEL 配置）。⚠️ token 上限为估值（沿用 qwen 家族档，很可能需修正），能力矩阵未逐项核验，接入时全量探针",
+      "familyNote": "qwen 家族旗舰档；qwen-plus（均衡）/qwen-long/qwq-plus 同端点 id 可用，见 qwen-max 条目"
+    },
+    "minimax-m3-official": {
+      "aliases": [
+        "minimax m3 官方",
+        "minimax m3 official",
+        "minimax 官方 m3",
+        "minimaxm3"
+      ],
+      "vendor": "minimax",
+      "vendorNote": "MiniMax 开放平台官方直连（platform.minimaxi.com 控制台发 key）；与 local 表 tokenhub 中转条目为不同通道",
+      "url": "https://api.minimaxi.com/v1/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "MiniMax-M3",
+      "channel": "direct",
+      "keyIssuer": "MiniMax 开放平台（platform.minimaxi.com，账户管理>接口密钥）",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 131072,
+      "confidence": "documented",
+      "quirks": [
+        "modelId 大小写敏感：官方文档示例为 MiniMax-M3（大写驼峰），禁止写小写",
+        "思考参数方言：thinking:{type:adaptive}，输出含 thinking 内容块（非 reasoning_content 字段）",
+        "输出上限参数名为 max_completion_tokens（非 max_tokens）方言之一，宿主请求字段需对齐"
+      ],
+      "verifiedBy": "2026-09-07 官方文档搜索核实（zhipu sogou 定点，原文=platform.minimaxi.com Chat Completions API / OpenAI SDK 两页，curl 示例含 MiniMax-M3+image_url+thinking adaptive）：国内主域 api.minimaxi.com，国际文档同构 api.minimax.io；M3 为原生多模态（图片输入文档示例实证）；1M 上下文多源一致（京东云稿件同口径）；输出上限为估值高亮，接入时全量探针",
+      "familyNote": "M3 为当前旗舰（MSA 稀疏注意力，1M ctx，原生多模态）；说「接 minimax m3」会与本条目+local 中转条目三方歧义，按用户 key 发卡方分流：platform.minimaxi.com key→本条目，tokenhub key→local 条目"
+    },
+    "doubao-seed-2.1-pro": {
+      "aliases": [
+        "doubao seed 2.1 pro",
+        "豆包 2.1 pro",
+        "豆包 pro",
+        "doubao pro"
+      ],
+      "vendor": "bytedance",
+      "vendorNote": "字节跳动火山方舟（Volcano Ark）托管的豆包自研模型",
+      "url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "REPLACE-WITH-ENDPOINT-ID",
+      "channel": "direct",
+      "keyIssuer": "火山引擎方舟平台（console.volcengine.com/ark，API Key 管理 + 推理接入点两处都要建）",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 256000,
+      "maxOutputTokens": 32768,
+      "confidence": "documented",
+      "quirks": [
+        "⚠️ 最大接入坑：model 字段不传模型名，传推理接入点 ID（ep-2025xxxxxx-xxxxx 形态）——控制台创建接入点并绑定模型后，用接入点 ID 作为 modelId 调用；注册表 modelId 为占位符，接入时必须向用户索取其 ep- 接入点 ID 替换",
+        "部分场景支持直接传模型名（如 doubao-seed-2.1-pro）调用，但官方主推接入点方式且直连模型名可用性按账号/地域浮动——以接入点为准",
+        "火山方舟 V3 API 完全兼容 OpenAI 协议（SDK V1/V2 已于 2024-11-30 下线，V3 为唯一现行版本）"
+      ],
+      "verifiedBy": "2026-09-07 搜索核实（zhipu std×2，火山引擎官方稿件+CSDN 实操教程双源）：Doubao-Seed-2.1-pro 为 2.1 系列旗舰（2026-06-23 发布，API 全量上线火山方舟，兼容 Claude Code/Codex/OpenClaw 等 Harness）；端点域名 ark.cn-beijing.volces.com/api/v3/ 为多源一致实操实证；V3 OpenAI 兼容为官方下线公告原文；接入点 ID 机制为实操教程实证（ep-20250218 形态）；token 上限为估值高亮，图片输入未逐项核验，接入时全量探针",
+      "familyNote": "Doubao-Seed-2.1-pro=旗舰（¥6/30 每百万，缓存命中 ¥1.2），turbo=减半档，Seed-Code=编程专用（Anthropic API 兼容），Evolving=月度迭代档；均走同一方舟端点，接入点 ID 决定具体模型"
     },
     "gpt-5.6-sol": {
       "aliases": [
         "gpt 5.6 sol",
-        "openai gpt 5.6 sol"
+        "openai gpt 5.6 sol",
+        "gpt5.6",
+        "gpt 5.6"
       ],
       "vendor": "openai",
       "url": "https://api.openai.com/v1/chat/completions",
@@ -248,7 +364,8 @@
       "maxInputTokens": 400000,
       "maxOutputTokens": 128000,
       "confidence": "documented",
-      "verifiedBy": "厂商为 OpenAI 官方 deprecations 页指定替代模型（2026-09-07 核验）；端点为 OpenAI 通用端点；token 上限为估值（高亮：很可能需修正）。⚠️ 国内直连有支付/网络门槛，国内用户实际多经 OpenRouter 通道接入"
+      "verifiedBy": "厂商为 OpenAI 官方 deprecations 页指定替代模型（2026-09-07 核验）；端点为 OpenAI 通用端点；token 上限为估值（高亮：很可能需修正）。⚠️ 国内直连有支付/网络门槛，国内用户实际多经 OpenRouter 通道接入",
+      "familyNote": "GPT-5.6 家族（2026-07-10 发布）三档：Sol=旗舰（本条目，Ultra 为 Sol 的高阶工作模式非独立模型）/ Terra=均衡主力 / Luna=轻量快速（输出成本约 Sol 1/5）。说「接 gpt5.6」默认本条目；要 Terra/Luna 走 Step 1 读文档核确切 id"
     },
     "deepseek-v4-pro-0813-cloud-tencent": {
       "aliases": [

@@ -50,7 +50,7 @@ Skill 是静态文件，**无自动更新机制**——按你的安装方式手�
 | [clarify-until-clear](./skills/clarify-until-clear/SKILL.md) | 反复澄清确认模式：只在"不问就很可能做错"时提问，最小充分提问，收敛后动手 | 需求模糊、意图不明、大任务启动前 |
 | [browser-login-reuse](./skills/browser-login-reuse/SKILL.md) | 浏览器自动化登录态复用：Chrome 登录一次导出 storageState，之后跨会话注入复用，AI 替你操作需要登录的网站 | 控制台查额度、面板配置、表单提交、上传文件等事务性操作 |
 | [adversarial-review](./skills/adversarial-review/SKILL.md) | 对抗性审查（AI 审 AI）：攻击者视角验收 AI 交付的方案/设计/代码——先核验交付真实性（需求缩水/虚假声明/幻觉依赖），再做四维破坏测试，输出带攻击路径和风险定级的报告 | agent 交付后验收、跨工具方案把关、交接文档核验 |
-| [model-connector](./skills/model-connector/SKILL.md) | 自定义大模型自动接入工程师（宿主无关）：双层注册表快路径——常用模型只需说「模型名 + API Key」即可零读文档接入；全部能力/上限经实时 API 探针校验（防虚标/漂移）；免费发现层实时验价，下架模型入墓碑 | 接入自定义模型、找免费 API、多模态能力探测、Token 上限实测、跨 Agent（Claude Code/Cursor/OpenClaw 等）接入自己的模型 |
+| [model-connector](./skills/model-connector/SKILL.md) | 自定义大模型自动接入工程师（宿主无关）：双层注册表快路径（20 条目 / 10 厂商渠道：DeepSeek、智谱 GLM、Kimi、千问AI平台、MiniMax、豆包·火山方舟、腾讯混元、小米 MiMo、OpenAI、OpenRouter）——常用模型只需说「模型名 + API Key」即可零读文档接入；全部能力/上限经实时 API 探针校验（防虚标/漂移）；免费发现层实时验价，下架/停用模型入墓碑短路 | 接入自定义模型、找免费 API、多模态能力探测、Token 上限实测、跨 Agent（Claude Code/Cursor/OpenClaw 等）接入自己的模型 |
 
 ## 设计原则
 

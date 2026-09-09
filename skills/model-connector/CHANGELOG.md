@@ -1,5 +1,26 @@
 # model-connector 更新日志
 
+## 2026-09-09 — v1.16.0（probe.py 挂账三清 + deepseek 双门全量探针 + vision-exp 收录，注册表版本 2026-09-09.1）
+
+背景：9/7 回执拍板「接一个没接过的免费模型/聚合平台」任务落地——选 deepseek /anthropic 端点（documented-未实测），同 key 双门探针，一石三鸟（素材 + probe.py 三子命令真实 key 首测 + 烧账）。probe.py image/output-limit/tool 三子命令为 v1.10.0 起首次真实 key 实测（此前只验过编译+无 key 冒烟）。
+
+### 探针结果（key 从本地 models.json 管道读取，不进对话不落盘）
+- **OpenAI 门 probe.py 全量**：smoke 200（reasoning 默认开）｜tool ok｜**output-limit claimed_ok 384000 一次通过**（384K 是真值非假边界）｜**image 假接受实锤**——200 但 reasoning_content 自述 "We don't have image"，图片根本没进模型
+- **anthropic 门手动 curl 等价**（probe.py 只说 OpenAI 方言，anthropic 探针走 SKILL.md 允许的手动流程）：smoke 200 + 标准 Anthropic 格式（thinking 块带 signature）｜tool ok（tool_use + stop_reason=tool_use）｜image 假接受（同 OpenAI 门）
+- **vision-exp 条目发现与收录**：anthropic 门 400 错误信息曝光 `deepseek-v4-flash-vision-exp`（文档未单列）；两门图片探针均答 "Red" = 真支持。看图必须用它，v4-pro 两门都假接受
+- **文档打脸实证**：官方称「不认识的模型名自动映射 flash」——实测乱名 400 拒绝（错误信息列三个合法名）；claude-sonnet-4-5 → v4-flash 映射属实（响应 model 字段回显）
+
+### 注册表（2026-09-07.4 → 2026-09-09.1）
+- `deepseek-v4-pro`：probe 全量回填（outputTested 384000 / toolCall / imageInput 假接受标注），lastVerified → 2026-09-09；altProtocol status → tested-2026-09-09，新增 verified 明细（auth/modelId/thinking/tool/claude 别名映射/文档打脸警示）
+- 新增 `deepseek-v4-flash-vision-exp`（confidence=tested，仅图片经实测；tool/上限为家族占位未实测，quirks 高亮「必须全量探针」+「实验版随时可能变动」）
+- validate 0 error 3 warn（均为预期中转声明）；匹配回归：deepseek vision→unique、kimi k3→unique、ox alpha→墓碑短路
+- ⚠️ 过程教训：首次回写踩 7 个 schema 类型 ERROR（outputRejected 写了 null、toolCall 写 bool、supportsToolCall/Reasoning 写 null、上限写 null）——标准类型以 validate_registry.py 为准：null 不许写、未测键不写、结果码用字符串 "ok-200"；修正后 0 error
+
+### 遗留
+- probe.py 不支持 anthropic 方言（x-api-key + /v1/messages），anthropic 端点探针只能手动 curl——是否加子命令待 ts 拍板
+- vision-exp 的 tool/reasoning/上下限未实测，下次接入该条目时全量补
+- SKILL.md 版本号未动（无流程变更，纯数据更新）——若按「改注册表必同版号」惯例需 ts 裁量
+
 ## 2026-09-07 — v1.15.0（新厂商线：MiniMax 官方直连 + 字节豆包，注册表版本 2026-09-07.4）
 
 背景：ts 点头开新厂商线（明确只做两家，Google/Anthropic 暂不做）。

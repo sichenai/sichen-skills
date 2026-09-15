@@ -65,3 +65,15 @@ SKILL.md 开放标准（Anthropic 2025-12 发布），兼容 Claude Code、Codex
 ## 许可证
 
 MIT License。详见 [LICENSE](./LICENSE)。
+
+## ❤️ 觉得好用？支持一下
+
+如果哪个 skill 帮你省了时间，点个 **Star** 就是最好的支持——能让更多 Agent 用户搜到这里。
+
+## 💬 交流与反馈
+
+- **GitHub Issues**：skill 报错、兼容性这类具体技术问题，最适合在这里提；附上 Agent 类型、报错原文和复现步骤，定位最快。
+- **邮箱**：[hi@sichenai.cc](mailto:hi@sichenai.cc)，合作、转载或其他想法直接写信。
+- **笔记网站**：[note.sichenai.cc](https://note.sichenai.cc/)——每个 skill 踩坑与打磨的完整过程都在「AI 实操手记」系列，动手前值得先读对应一篇。
+
+> 以上渠道都由本人维护；开源用爱发电，提问给足上下文、交流当朋友处，效率最高。

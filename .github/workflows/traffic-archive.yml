@@ -1,5 +1,7 @@
 # 流量周留档：GitHub Traffic 只滚 14 天窗口、无历史累计，这里每周抓一次快照
 # 存进 traffic-archive/ 永久累积，并顺手记 star/fork 等公开数据
+# 认证：优先 secrets.TRAFFIC_PAT（内置 GITHUB_TOKEN 对 traffic 接口实测 403），
+#       未配置时回退 github.token 并在日志里明确标注（必挂，用于自检）
 # 手动触发：Actions 页 traffic-archive → Run workflow
 name: traffic-archive
 
@@ -24,11 +26,12 @@ jobs:
 
       - name: 抓取 Traffic 接口并写快照 JSON
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.TRAFFIC_PAT || github.token }}
+          TOKEN_SOURCE: ${{ secrets.TRAFFIC_PAT != '' && 'TRAFFIC_PAT secret' || 'github.token（内置，traffic 接口预计 403）' }}
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PY'
-          import json, os, sys, urllib.request
+          import json, os, sys, urllib.error, urllib.request
           from datetime import datetime, timedelta, timezone
 
           base = f"https://api.github.com/repos/{os.environ['REPO']}"
@@ -44,33 +47,50 @@ jobs:
               with urllib.request.urlopen(req, timeout=30) as r:
                   return json.load(r)
 
+          def err_body(e):
+              return e.read().decode(errors="replace")[:500]
+
+          print(f"认证来源: {os.environ['TOKEN_SOURCE']}")
           bj_now = datetime.now(timezone(timedelta(hours=8)))
-          repo = get("")
+          repo = get("")  # 公开数据不依赖权限，此处失败=环境问题，直接抛
           snapshot = {
               "snapshot_date": bj_now.strftime("%F"),
-              "clones": get("/traffic/clones"),
-              "views": get("/traffic/views"),
-              "popular_paths": get("/traffic/popular/paths"),
-              "referring_sources": get("/traffic/referring_sources"),
               "public": {
-              "stars": repo["stargazers_count"],
-              "forks": repo["forks_count"],
-              "watchers": repo["subscribers_count"],
+                  "stars": repo["stargazers_count"],
+                  "forks": repo["forks_count"],
+                  "watchers": repo["subscribers_count"],
                   "open_issues": repo["open_issues_count"],
-              }
+              },
           }
+          errors = {}
+          for name, path in [
+              ("clones", "/traffic/clones"),
+              ("views", "/traffic/views"),
+              ("popular_paths", "/traffic/popular/paths"),
+              ("referring_sources", "/traffic/referring_sources"),
+          ]:
+              try:
+                  snapshot[name] = get(path)
+              except urllib.error.HTTPError as e:
+                  errors[name] = f"HTTP {e.code}: {err_body(e)}"
+                  print(f"[{name}] 失败 {errors[name]}")
 
           os.makedirs("traffic-archive", exist_ok=True)
           out = f"traffic-archive/{snapshot['snapshot_date']}.json"
           with open(out, "w", encoding="utf-8") as f:
               json.dump(snapshot, f, ensure_ascii=False, indent=2)
               f.write("\n")
-
-          c, v = snapshot["clones"], snapshot["views"]
-          print(f"快照已写入 {out}")
-          print(f"clones 14d: {c['count']} / unique {c['uniques']}; "
-                f"views 14d: {v['count']} / unique {v['uniques']}; "
-                f"stars: {snapshot['public']['stars']}")
+          print(f"快照已写入 {out}（{'完整' if not errors else '部分，含失败项'}）")
+          if "clones" in snapshot:
+              c, v = snapshot["clones"], snapshot["views"]
+              print(f"clones 14d: {c['count']} / unique {c['uniques']}; "
+                    f"views 14d: {v['count']} / unique {v['uniques']}; "
+                    f"stars: {snapshot['public']['stars']}")
+          if errors:
+              print(f"FAILED: {len(errors)} 个 traffic 接口失败 {list(errors)}；"
+                    "若上为 403=内置 GITHUB_TOKEN 无 traffic 读权限，"
+                    "须配置 fine-grained PAT（仅本仓 Contents:read）为 secret TRAFFIC_PAT")
+              sys.exit(1)
           PY
 
       - name: 快照 commit 回仓（攒流量档案）

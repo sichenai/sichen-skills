@@ -1,0 +1,86 @@
+# 流量周留档：GitHub Traffic 只滚 14 天窗口、无历史累计，这里每周抓一次快照
+# 存进 traffic-archive/ 永久累积，并顺手记 star/fork 等公开数据
+# 手动触发：Actions 页 traffic-archive → Run workflow
+name: traffic-archive
+
+on:
+  schedule:
+    - cron: "10 1 * * 1" # 每周一 01:10 UTC = 北京时间周一 09:10（错开榜单仓 01:00）
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traffic-archive
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 抓取 Traffic 接口并写快照 JSON
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request
+          from datetime import datetime, timedelta, timezone
+
+          base = f"https://api.github.com/repos/{os.environ['REPO']}"
+          headers = {
+              "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "traffic-archive-bot",
+          }
+
+          def get(path):
+              req = urllib.request.Request(base + path, headers=headers)
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          bj_now = datetime.now(timezone(timedelta(hours=8)))
+          repo = get("")
+          snapshot = {
+              "snapshot_date": bj_now.strftime("%F"),
+              "clones": get("/traffic/clones"),
+              "views": get("/traffic/views"),
+              "popular_paths": get("/traffic/popular/paths"),
+              "referring_sources": get("/traffic/referring_sources"),
+              "public": {
+              "stars": repo["stargazers_count"],
+              "forks": repo["forks_count"],
+              "watchers": repo["subscribers_count"],
+                  "open_issues": repo["open_issues_count"],
+              }
+          }
+
+          os.makedirs("traffic-archive", exist_ok=True)
+          out = f"traffic-archive/{snapshot['snapshot_date']}.json"
+          with open(out, "w", encoding="utf-8") as f:
+              json.dump(snapshot, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+
+          c, v = snapshot["clones"], snapshot["views"]
+          print(f"快照已写入 {out}")
+          print(f"clones 14d: {c['count']} / unique {c['uniques']}; "
+                f"views 14d: {v['count']} / unique {v['uniques']}; "
+                f"stars: {snapshot['public']['stars']}")
+          PY
+
+      - name: 快照 commit 回仓（攒流量档案）
+        run: |
+          git config user.name  "sichenai-bot"
+          git config user.email "276507541+sichenai@users.noreply.github.com"
+          git add traffic-archive/
+          if git diff --cached --quiet; then
+            echo "无变化，跳过 commit"
+          else
+            git commit -m "流量周留档（自动）：$(TZ=Asia/Shanghai date +%F)"
+            git push
+          fi

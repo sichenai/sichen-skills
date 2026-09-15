@@ -67,7 +67,7 @@ jobs:
               ("clones", "/traffic/clones"),
               ("views", "/traffic/views"),
               ("popular_paths", "/traffic/popular/paths"),
-              ("referring_sources", "/traffic/referring_sources"),
+              ("popular_referrers", "/traffic/popular/referrers"),
           ]:
               try:
                   snapshot[name] = get(path)

@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-09.1",
+  "version": "2026-09-18.1",
   "scope": "public",
   "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）；`tombstone`+`removedOn`+`removedBy`（local 表内已停支持条目：不再维护、不做时效核验，命中即告知已移除并转免费发现层，历史探针数据仅供复活复核）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源；随条目停支持同步移除）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。渠道三元结构字段：`channel`（direct=厂商直连，key=模型原厂发放 / cloud-hosted=云厂商托管渠道，key=云厂商发放，模型是别家的 / private-relay=私有中转，仅 local 表）；`keyIssuer`（该条目要求谁发的 key，字符串）；`channelNote`（渠道差异备注，key 错配症状）。【渠道铁律】快路径命中后必须向用户核对 key 发卡方与 keyIssuer 一致——云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题。",
   "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先，【条目级整体替换】而非字段级合并；覆盖后 confidence/lastVerified 以 local 条目为准，禁止互相拼字段）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。⑦ 可用 scripts/match_registry.py 执行①-④（JSON 结果即本流程输出），手动流程等价。",
@@ -70,7 +70,7 @@
           "claudeAliasMap": "claude-sonnet-4-5→deepseek-v4-flash 实测回显证实；乱名 400 拒绝（文档『自动映射』表述不准）"
         }
       },
-      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；未见探针明细",
+      "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；探针全量回填 2026-09-09（outputTested 384000 / toolCall / imageInput 假接受标注）。2026-09-10 官方曾宣布 9/14 下线并路由至 V4.1-Flash，9/11 官方撤回——继续服务、计费不变（api-docs.deepseek.com/quick_start/pricing 2026-09-18 fetch，脚注2）。V4.1-Pro 未发布前请求可能被路由到 V4.1-Flash 按 Flash 价计费，接入后建议留意账单",
       "channel": "direct",
       "keyIssuer": "deepseek 官方平台（platform.deepseek.com）",
       "probe": {
@@ -438,9 +438,18 @@
       "keyIssuer": "腾讯云（lkeap Token Plan 订阅，consola.cloud.tencent.com）",
       "channelNote": "模型是 DeepSeek 的，key 必须是腾讯云 Token Plan 发的（sk-tp- 前缀）；DeepSeek 官方 key 打此端点无效，反向同理——key↔渠道错配 401 头号来源；vendor=tencent-cloud（按「vendor 填提供 url 的一方」规范，2026-09-07 校验脚本抓错后修正）"
     },
-    "deepseek-v4-flash-vision-exp": {
+    "deepseek-v4.1-flash": {
       "aliases": [
+        "deepseek flash",
+        "deepseek-flash",
+        "deepseek v4.1 flash",
+        "ds v4.1 flash",
+        "v4.1 flash",
+        "deepseek v4 flash",
+        "deepseek-v4-flash",
+        "deepseek v4 flash vision exp",
         "deepseek vision exp",
+        "deepseek-v4-flash-vision-exp",
         "ds vision",
         "deepseek 看图"
       ],
@@ -448,25 +457,41 @@
       "url": "https://api.deepseek.com/v1/chat/completions",
       "protocol": "openai-compatible",
       "auth": "Bearer",
-      "modelId": "deepseek-v4-flash-vision-exp",
-      "supportsToolCall": false,
+      "modelId": "deepseek-flash",
+      "supportsToolCall": true,
       "supportsImages": true,
       "supportsReasoning": true,
-      "maxInputTokens": 131072,
-      "maxOutputTokens": 65536,
-      "lastVerified": "2026-09-09",
-      "confidence": "tested",
-      "verifiedBy": "probe 2026-09-09：两门图片探针均答 Red（真支持）；该 id 由 anthropic 门 400 错误信息曝光，官方文档未单列条目",
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "confidence": "documented",
+      "verifiedBy": "2026-09-18 官方 pricing 页核验（api-docs.deepseek.com/quick_start/pricing 一手 fetch）：Model Version=DeepSeek-V4.1-Flash，model=deepseek-flash；原生 vision（features 表 Vision ✓，旧 vision-exp 的存在意义已被官方收编）；1M 上下文 / 最大输出 384K 为官方口径，未实测，接入时全量探针（documented 判级）。⚠️ 官方明确旧名 deepseek-v4-flash / deepseek-v4-flash-vision-exp 仍被接受但模型已退役——请求由 V4.1-Flash 服务并按 Flash 价计费（官方口径=半退役 alias，故不作墓碑、收编为本条 alias，非独立服务）",
+      "familyNote": "2026-09-10 发布（API 与权重同日开放），Causal Encoder-Decoder 新架构（骨干 552B MoE，输入激活 8B / 输出激活 16B 非对称）；说「接 deepseek flash」「接 ds 看图」命中文本+看图合一的本条目；同一端点另有 v4-pro 条目在册（官方撤回下线、继续服务）；anthropic 双协议门见 v4-pro 条目 altProtocol（本条目双门可用性未独立实测）",
       "channel": "direct",
-      "keyIssuer": "deepseek 官方平台（platform.deepseek.com）",
-      "quirks": [
-        "实验版条目，文档未承诺稳定性，随时可能变动",
-        "deepseek-v4-pro 图片输入为假接受，看图必须用本条目",
-        "仅图片输入经实测（两门均答 Red）；tool/reasoning/上下限均未实测，数值为家族占位须全量探针"
+      "keyIssuer": "deepseek 官方平台（platform.deepseek.com）"
+    },
+    "glm-5.3-flashx": {
+      "aliases": [
+        "glm 5.3 flashx",
+        "glm-5.3-flashx",
+        "智谱 glm 5.3 flashx",
+        "zhipu glm 5.3 flashx",
+        "flashx"
       ],
-      "probe": {
-        "imageInput": "ok-200"
-      }
+      "vendor": "zhipu",
+      "url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      "protocol": "openai-compatible",
+      "auth": "Bearer",
+      "modelId": "glm-5.3-flashx",
+      "channel": "direct",
+      "keyIssuer": "智谱开放平台（open.bigmodel.cn）",
+      "supportsToolCall": true,
+      "supportsImages": true,
+      "supportsReasoning": true,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 131072,
+      "confidence": "estimate",
+      "verifiedBy": "2026-09-18 溯源（zhipu-web-search sogou，bigmodel.cn 官网首页快照）：GLM-5.3-FlashX 原生多模态、推理速度最高 200 tokens/s。⚠️ 证据边界：官方 docs（模型概览/定价页/发布记录）均未收录该模型，官网首页轮播卡 9/18 当天已消失（疑似灰度/内测/刚上即调整），modelId glm-5.3-flashx 为按官方命名惯例推断（未实测），token 上限沿用家族档为估值，接入时必须全量探针 + 以开放平台实时模型列表为准；若调用 404 model not found → 转 Step 1 读文档全流程",
+      "familyNote": "GLM-5 系多模态家族第三档（5.3 文本旗舰 / 5.3-Flash 320B-A18B 多模态 / FlashX 高速多模态 200 tokens/s）；docs.bigmodel.cn 模型概览列有 glm-4.7-flashx 前代先例（X 后缀=Flash 系高速扩展档），命名惯例佐证成立"
     }
   },
   "retiredModels": [

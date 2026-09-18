@@ -1,5 +1,27 @@
 # model-connector 更新日志
 
+## 2026-09-18 — v1.17.0（V4.1-Flash 收编 vision-exp + GLM-5.3-FlashX 收录 + V4-Pro 生命周期更新，注册表版本 2026-09-18.1）
+
+背景：ts 提出两个新模型（deepseek v4.1flash / GLM5.3FLASHX）。第一性原理拆解后定位真实缺口：不是「有新模型就塞表」，而是 ①数据保鲜（官方生命周期变动）②新条目证据分级。全程信源：DeepSeek 官方 pricing 页一手 fetch + 智谱官方 docs 定点搜索（std/pro+domain filter、sogou）。
+
+### DeepSeek 侧（官方 pricing 页实证 2026-09-18）
+- **新增 `deepseek-v4.1-flash`（documented）**：9/10 发布，model=deepseek-flash，1M/384K 官方口径，原生 vision（官方 features 表 Vision ✓）；552B MoE 新架构（输入激活 8B/输出 16B）。接入时全量探针
+- **旧 `deepseek-v4-flash-vision-exp` 条目下线，未做墓碑而是收编 alias**：官方明确旧名 deepseek-v4-flash / deepseek-v4-flash-vision-exp「仍被接受但模型已退役，请求由 V4.1-Flash 服务按 Flash 价计费」——这是「半退役 alias」新形态：短路成墓碑会误判旧 id 已死（请求实际仍成功），收编为 alias + verifiedBy 注记最忠实。vision-exp 的历史探针（两门图片 200）随 CHANGELOG 留档
+- **`deepseek-v4-pro` 生命周期更新**：9/10 官方宣布 9/14 下线路由 Flash → 9/11 官方撤回，继续服务计费不变（pricing 页脚注 2）；verifiedBy 补路由风险注记（V4.1-Pro 未发布前请求可能被路由 Flash 按 Flash 价计费）
+
+### 智谱侧（证据边界明确标注）
+- **新增 `glm-5.3-flashx`（estimate）**：唯一证据 = bigmodel.cn 官网首页快照（sogou 溯源）「GLM-5.3-FlashX 原生多模态模型，推理速度最高可达 200 tokens/s」；官方 docs（模型概览/定价/发布记录）均未收录，首页轮播卡 9/18 当天已消失（疑似灰度/内测/刚上即调整）；modelId glm-5.3-flashx 为命名惯例推断（docs 模型概览列有 glm-4.7-flashx 前代先例佐证），上限沿用家族估值。quirk 级警示写入 verifiedBy：接入必全量探针 + 实时模型列表核对，404 即转读文档流程
+- 另核实 GLM-5.3-Flash（local 表 8/27 tested 条目）已全量上线标准 API（docs 1M/128K、定价 0.8/2.8 元每百万、Coding Plan 3 倍额度），local 条目无需改动
+
+### 回归（match_registry.py 实测）
+- 新场景 16/17/18 入 tests/scenarios.md：「deepseek flash」/「ds vision」/「deepseek vision exp」/「deepseek 看图」→ unique v4.1-flash；「glm 5.3 flashx」/「flashx」→ unique；「deepseek v4 flash」→ ambiguous（官方新条目 vs 腾讯 TP 0731，key 发卡方分流）；「ox alpha」/「gpt4」墓碑短路不受影响
+- validate 0 error 3 warn（既有中转预期声明）；活跃条目公共 17/私有 5（vision-exp 下线、两条新增，公共表 16→17）
+
+### 遗留
+- glm-5.3-flashx 待官方 docs 收录后升级 confidence（estimate → documented）并核确切开定价；若为灰度仅订阅可见，考虑移 local 或标渠道限制
+- deepseek-v4.1-flash 接入时全量探针（documented 判级），输出上限 384K 为官方口径非实测
+- vision-exp 历史探针数据（imageInput ok-200 两门）已无对应在册条目，仅本 CHANGELOG 留档
+
 ## 2026-09-09 — v1.16.0（probe.py 挂账三清 + deepseek 双门全量探针 + vision-exp 收录，注册表版本 2026-09-09.1）
 
 背景：9/7 回执拍板「接一个没接过的免费模型/聚合平台」任务落地——选 deepseek /anthropic 端点（documented-未实测），同 key 双门探针，一石三鸟（素材 + probe.py 三子命令真实 key 首测 + 烧账）。probe.py image/output-limit/tool 三子命令为 v1.10.0 起首次真实 key 实测（此前只验过编译+无 key 冒烟）。

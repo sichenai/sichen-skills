@@ -22,6 +22,8 @@
 | 16 | 「接 deepseek flash」/「接 ds 看图」/「接 deepseek vision exp」 | 唯一命中 deepseek-v4.1-flash（官方半退役 alias 已收编：旧 id v4-flash / v4-flash-vision-exp 请求由新模型服务按 Flash 价计费）；vision 预填 true（官方 features 表）但 documented 判级 → 全量探针，图片探针必做 |
 | 17 | 「接 glm 5.3 flashx」/「接 flashx」 | 唯一命中 glm-5.3-flashx（estimate 判级：仅官网首页快照佐证，官方 docs 未收录，modelId/上限为推断+估值）→ 全量探针 + 交付说明高亮证据边界；404 model not found → 转 Step 1 读文档全流程 |
 | 18 | 「接 deepseek v4 flash」 | ambiguous（腾讯 TP 0731 条目 vs 官方 v4.1-flash）→ 单条提问二选一：key 发卡方核对（sk-tp- 腾讯 TP vs platform.deepseek.com 官方）；这也是渠道铁律的标准触发场景 |
+| 19 | 「接 mimo flash」/「接 mimo v2.6」 | 「mimo flash」唯一命中 v2.6-flash（tested 9/22 探针在保鲜期内 → 轻验证）；「mimo v2.6」ambiguous 二选一（flash vs pro），禁止自行挑；「mimo pro」唯一命中 v2.5-pro 旧档 → 先亮牌代际差（v2.6 全模态 vs v2.5-pro 纯文本 + 邀测退役风险）确认是否要旧档 |
+| 20 | v2.5 旧 id 接入（邀测已过 2026-09-29 后） | 先 smoke 复验：200 → 按注册表注记正常接（风险自担）；404 → 转 v2.6 家族条目推荐替代，v2.5 条目转墓碑 |
 
 ## 判定纪律
 

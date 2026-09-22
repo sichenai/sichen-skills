@@ -1,5 +1,26 @@
 # model-connector 更新日志
 
+## 2026-09-22 — v1.18.0（MiMo-V2.6 双版本全量探针收录 + v2.5 邀测生命周期挂账，注册表版本 2026-09-22.1）
+
+背景：ts 提「小米出了 mimo v2.6 跟 flash」。流程 = clarify-until-clear（事实问题信源解决，只把「入表置信度」交 ts 拍板）× 第一性原理（迭代 = 数据保鲜，不塞表不核证）。ts 拍板：现在全量探针。发布 9/22 凌晨（IT之家/搜狐/traictory 多源一致）。
+
+### 探针结果（本机小米平台 key，stdin 管道读入不落盘；域名门禁 api.xiaomimimo.com 全程生效）
+- **mimo-v2.6-flash（309B-A15B，¥1/¥2 每百万）**：smoke 200（model 回显核确 id）；图片 200 且 reasoning_content 自述识别红色（原生全模态实证）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过（131072 是真值非假边界）
+- **mimo-v2.6-pro（1.02T-A42B，¥3/¥6，AA 指数 46 分当前开源权重最高）**：四项同上全绿
+- **quirk 实证**：思考默认开启（reasoning_content 输出）——smoke 的 max_tokens=16 被推理吃光、content 为空；已写入两新条目 quirks（宿主小 max_tokens 会拿到空 content）
+- **v2.5 邀测疑点核销**：IT之家 9/22 报道「邀测 1 周后结束、邀测用户须切换模型名称」→ 两条 v2.5 旧 id 现场复验 smoke 均 200（9/22 仍活），但退役风险挂账：v2.5 条目补生命周期注记（2026-09-29 前后到期）
+
+### 注册表（2026-09-18.1 → 2026-09-22.1）
+- 新增 `mimo-v2.6-flash` / `mimo-v2.6-pro`（confidence=tested，probe 结构化回填 outputTested 131072/imageInput ok-200/toolCall ok-200）；OpenRouter 官方系路由（xiaomi/mimo-v2.6-*，ctx 1048576 元数据一致）与 UltraSpeed 独立 id（10 倍价）入 quirks/familyNote 注记
+- **跨代能力反转警示入 familyNote**：v2.6 全系全模态 ≠ v2.5-pro 纯文本（v2.5-pro 8 月实测 404 拒图），alias 刻意无重叠；「mimo pro」仍唯一命中 v2.5-pro 旧档（回归实测），familyNote 写明命中后须亮牌代际差
+- v2.5 两条件目 lastVerified 刷新 + 邀测退役挂账；1M 输入上限为 OpenRouter 元数据口径（未做输入探针，quirks 已注明）
+- 活跃条目公共 19/私有 5 = 24（v2.6 两条新增）；validate 0 error 3 warn（既有中转预期）；回归：「mimo flash」unique、「mimo v2.6」ambiguous 二选一、「mimo pro」unique v2.5-pro（亮牌规则）、墓碑场景不受影响
+
+### 遗留
+- 输入上限未做两档探针（1M 为元数据+家族口径）；邀测 9/29 前后到期，届时需复验 v2.5 两条 id，死则转墓碑
+- UltraSpeed 档（mimo-v2.6-pro-ultraspeed，$4.35/$8.7 每百万）未收录，ts 需要时走读文档流程
+- 官方 /v1/models 需 key（401），元数据白拿姿势对小米平台不适用——探针分级表「Moonshot 系同走此路」不适用小米，已在条目注记用 OpenRouter 替代
+
 ## 2026-09-18 — v1.17.0（V4.1-Flash 收编 vision-exp + GLM-5.3-FlashX 收录 + V4-Pro 生命周期更新，注册表版本 2026-09-18.1）
 
 背景：ts 提出两个新模型（deepseek v4.1flash / GLM5.3FLASHX）。第一性原理拆解后定位真实缺口：不是「有新模型就塞表」，而是 ①数据保鲜（官方生命周期变动）②新条目证据分级。全程信源：DeepSeek 官方 pricing 页一手 fetch + 智谱官方 docs 定点搜索（std/pro+domain filter、sogou）。

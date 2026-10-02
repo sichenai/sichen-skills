@@ -75,7 +75,7 @@ MIT License。详见 [LICENSE](./LICENSE)。
 **微信交流群**：有跑不通的问题、或想交流实测心得，微信扫码进群直接说。
 
 <div align="center">
-  <img src="assets/wechat-group-qr.jpg?v=20260929" width="220" alt="微信交流群二维码" />
+  <img src="assets/wechat-group-qr.jpg?v=20261002" width="220" alt="微信交流群二维码" />
   <p><sub>找我聊聊 · 微信交流群</sub></p>
 </div>
 

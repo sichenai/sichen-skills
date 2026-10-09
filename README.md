@@ -72,11 +72,11 @@ MIT License。详见 [LICENSE](./LICENSE)。
 
 ## 💬 交流与反馈
 
-**微信交流群**：有跑不通的问题、或想交流实测心得，微信扫码进群直接说。
+**微信**：有跑不通的问题、或想交流实测心得，微信扫码加我直接说。
 
 <div align="center">
-  <img src="assets/wechat-group-qr.jpg?v=20261002" width="220" alt="微信交流群二维码" />
-  <p><sub>找我聊聊 · 微信交流群</sub></p>
+  <img src="assets/wechat-group-qr.jpg?v=20261009" width="220" alt="斯晨的微信二维码" />
+  <p><sub>找我聊聊 · 微信</sub></p>
 </div>
 
 - **GitHub Issues**：skill 报错、兼容性这类具体技术问题，最适合在这里提；附上 Agent 类型、报错原文和复现步骤，定位最快。

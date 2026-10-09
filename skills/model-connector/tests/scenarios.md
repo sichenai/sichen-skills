@@ -18,11 +18,11 @@
 | 12 | 写配置后宿主条目消失（UI 保存/重启回滚） | 读回校验发现丢失 → 转宿主 UI 注入兜底；绝不把「文件已写入」当交付终点 |
 | 13 | 用户在云宿主主动粘贴 key | 提示存储风险一句，建议先用占位符验证参数格式、真实 key 留到本地宿主再填；首轮提问绝不索要 key |
 | 14 | scriptCapable 宿主说「接 glm 5」 | match_registry.py 返回 ambiguous（glm-5.2 / glm-5.3-flash；sensenova/glm-5.2 已墓碑不参与预填）→ 单条提问；顺带核对带 key 请求的域名 ∈ trustedDomains |
-| 15 | tested 条目 lastVerified 在 14 天内重新接入 | 轻验证：仅 smoke 一次，不重测上限/多模态；用户可显式跳过，documented/过期条目必须全量探针 |
+| 15 | tested 条目（无生命周期风险信号）重新接入 | 轻验证：仅 smoke 一次，不重测上限/多模态；用户可显式跳过；documented/estimate、命中生命周期风险信号（退役/下线字样、recheckAfter 到期、lastVerified 缺失或 >90 天、用户报错）的条目走全量探针或针对性补测 |
 | 16 | 「接 deepseek flash」/「接 ds 看图」/「接 deepseek vision exp」 | 唯一命中 deepseek-v4.1-flash（官方半退役 alias 已收编：旧 id v4-flash / v4-flash-vision-exp 请求由新模型服务按 Flash 价计费）；vision 预填 true（官方 features 表）但 documented 判级 → 全量探针，图片探针必做 |
 | 17 | 「接 glm 5.3 flashx」/「接 flashx」 | 唯一命中 glm-5.3-flashx（estimate 判级：仅官网首页快照佐证，官方 docs 未收录，modelId/上限为推断+估值）→ 全量探针 + 交付说明高亮证据边界；404 model not found → 转 Step 1 读文档全流程 |
 | 18 | 「接 deepseek v4 flash」 | ambiguous（腾讯 TP 0731 条目 vs 官方 v4.1-flash）→ 单条提问二选一：key 发卡方核对（sk-tp- 腾讯 TP vs platform.deepseek.com 官方）；这也是渠道铁律的标准触发场景 |
-| 19 | 「接 mimo flash」/「接 mimo v2.6」 | 「mimo flash」唯一命中 v2.6-flash（tested 9/22 探针在保鲜期内 → 轻验证）；「mimo v2.6」ambiguous 二选一（flash vs pro），禁止自行挑；「mimo pro」唯一命中 v2.5-pro 旧档 → 先亮牌代际差（v2.6 全模态 vs v2.5-pro 纯文本 + 邀测退役风险）确认是否要旧档 |
+| 19 | 「接 mimo flash」/「接 mimo v2.6」 | 「mimo flash」唯一命中 v2.6-flash（tested 且无生命周期风险信号 → 轻验证）；「mimo v2.6」ambiguous 二选一（flash vs pro），禁止自行挑；「mimo pro」唯一命中 v2.5-pro 旧档 → 先亮牌代际差（v2.6 全模态 vs v2.5-pro 纯文本 + 退役风险：v2.5 已挂 2026-10-21 下线注记 → 命中生命周期风险信号先轻查再确认） |
 | 20 | v2.5 旧 id 接入（邀测已过 2026-09-29 后） | 先 smoke 复验：200 → 按注册表注记正常接（风险自担）；404 → 转 v2.6 家族条目推荐替代，v2.5 条目转墓碑 |
 
 ## 判定纪律

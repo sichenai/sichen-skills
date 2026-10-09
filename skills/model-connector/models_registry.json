@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-22.1",
+  "version": "2026-10-09.2",
   "scope": "public",
   "note": "随 skill 分发的公共模型注册表：仅收录厂商官方公开端点（任何持有该厂商 API Key 的用户均可使用），不含任何私有中转、订阅专属端点或 API Key。本表是消除「读文档+追问参数」摩擦的【起点假设】，非最终权威——写入宿主配置前，skill 必须按 SKILL.md Step 4 按探针分级校验（捕获虚标与漂移）。私有/中转/订阅专属条目放 models_registry.local.json（分发打包时必须排除该文件）。字段说明：`confidence`（tested=实测 / documented=文档确认 / estimate=估值）；`lastVerified`（YYYY-MM-DD 或 YYYY-MM，最近一次实证/核验日期，粗粒度月份按从严判级处理）；`probe`（结构化探针记录：outputTested/outputRejected=输出上限二分实测值/被拒值，imageInput=ok-200 或 rejected-<HTTP码>，toolCall=ok-200 / no-tool-call / rejected-<HTTP码>，contextTotal/contextPolicy=合计口径上下文及其政策）；`quirks`（请求/响应方言例外，如 reasoning 参数方言、强制思考模式）；`altProtocol`（厂商双协议端点：{protocol,url,status}，status=documented-未实测 的必须先探针）；`freeTier` + `freeTierCheckedOn`（免费状态及核验日期，成对出现）；`tombstone`+`removedOn`+`removedBy`（local 表内已停支持条目：不再维护、不做时效核验，命中即告知已移除并转免费发现层，历史探针数据仅供复活复核）。顶层 `trustedDomains` 为各厂商已知官方域名白名单（仅收录本表/私表内出现且经实证的域名，新厂商按 Step 1 文档补录并注明来源；随条目停支持同步移除）——带 key 的请求发往白名单外域名 = 升级为用户显式确认。顶层 `retiredModels` 数组为已下架/停止免费的模型墓碑：命中墓碑 → 不预填不追问 key，告知用户已失效并转免费优先发现层推荐替代；`recheckAfter` 之前免复核，之后可应用户质疑实时复核一次。渠道三元结构字段：`channel`（direct=厂商直连，key=模型原厂发放 / cloud-hosted=云厂商托管渠道，key=云厂商发放，模型是别家的 / private-relay=私有中转，仅 local 表）；`keyIssuer`（该条目要求谁发的 key，字符串）；`channelNote`（渠道差异备注，key 错配症状）。【渠道铁律】快路径命中后必须向用户核对 key 发卡方与 keyIssuer 一致——云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题。",
   "matchRule": "① 规范化：用户口语模型名转小写，空格与连字符统一。② 合并：先加载本文件，若同目录存在 models_registry.local.json 则按 id 覆盖合并（local 优先，【条目级整体替换】而非字段级合并；覆盖后 confidence/lastVerified 以 local 条目为准，禁止互相拼字段）。③ 匹配方向：规范化后的用户词是某条目 id 或其 aliases 任一项的子串（含相等）即命中该条目。④ 分流：命中 1 条直接用；命中 >1 条单条追问二选一（防同系列兄弟模型能力错配）；0 命中退回读文档全流程。⑤ 容错：本文件或 local 文件缺失/JSON 解析失败 → 视同 0 命中退回读文档流程，不得中断。⑥ alias 纪律：每条 alias 必须无歧义指向该确切模型，禁止收录可能指向兄弟模型的模糊简称（如「deepseek v4」不能当 v4-pro 的 alias）。⑦ 可用 scripts/match_registry.py 执行①-④（JSON 结果即本流程输出），手动流程等价。",
@@ -148,7 +148,7 @@
         "imageInput": "rejected-404"
       },
       "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:false 经图片请求实测（404 No endpoints found that support image input）。2026-09-22 smoke 复验 200（邀测切换疑点核销：v2.5 id 未死）；⚠️ 生命周期注记：官方邀测活动 2026-09-29 前后结束（IT之家 9/22 报道「原邀测资格用户须切换模型名称方可继续使用，邀测 1 周后结束」），到期后本条目可能失效，失效即转 MiMo-V2.6 家族条目（同代能力反转：v2.6-pro 全模态 ≠ v2.5-pro 纯文本，禁止互套）",
-      "familyNote": "V2.5 旗舰（纯文本 Agent）；V2.6 已发布（mimo-v2.6-pro 条目，全模态），邀测结束后 v2.5 id 退役风险高，接入新需求优先 v2.6。说「mimo pro」会唯一命中本条目（v2.5 旧档）——鉴于退役风险与 v2.6 代际跳升，命中后应向用户亮牌代际差确认是否要旧档",
+      "familyNote": "V2.5 旗舰（纯文本 Agent）；V2.6 已发布（mimo-v2.6-pro 条目，全模态），邀测结束后 v2.5 id 退役风险高，接入新需求优先 v2.6。说「mimo pro」会唯一命中本条目（v2.5 旧档）——鉴于退役风险与 v2.6 代际跳升，命中后应向用户亮牌代际差确认是否要旧档；【2026-10-09 官方确认】将于北京时间 2026-10-21 10:00 正式下线（mimo.mi.com 模型列表页），到期移入 retiredModels 墓碑",
       "channel": "direct",
       "keyIssuer": "小米 MiMo 开放平台"
     },
@@ -176,7 +176,8 @@
       },
       "verifiedBy": "用户实证配置 (2026-08)，官方公开端点；supportsImages:true 经图片请求实测 (200)。2026-09-22 smoke 复验 200（邀测切换疑点核销：v2.5 id 未死）；⚠️ 同 mimo-v2.5-pro 条目生命周期注记：邀测活动 2026-09-29 前后结束，v2.5 id 退役风险挂账。与 mimo-v2.5-pro 仅模型名不同、能力不同，禁止套用",
       "channel": "direct",
-      "keyIssuer": "小米 MiMo 开放平台"
+      "keyIssuer": "小米 MiMo 开放平台",
+      "familyNote": "；【2026-10-09 官方确认】将于北京时间 2026-10-21 10:00 正式下线（mimo.mi.com 模型列表页），到期移入 retiredModels 墓碑"
     },
     "mimo-v2.6-flash": {
       "aliases": [
@@ -228,19 +229,20 @@
       "supportsReasoning": true,
       "maxInputTokens": 1048576,
       "maxOutputTokens": 131072,
-      "lastVerified": "2026-09-22",
+      "lastVerified": "2026-10-09",
       "confidence": "tested",
       "probe": {
         "outputTested": 131072,
         "imageInput": "ok-200",
-        "toolCall": "ok-200"
+        "toolCall": "ok-200",
+        "stream": "ok-200"
       },
       "quirks": [
         "思考默认开启（reasoning_content 字段输出），小 max_tokens 会被推理吃掉导致 content 为空",
         "图片输入经实测正确识别红色（原生全模态）",
         "OpenRouter 对应路由 xiaomi/mimo-v2.6-pro（$0.435/$0.87 每百万，对官方 ¥3/¥6）；UltraSpeed 为独立 id mimo-v2.6-pro-ultraspeed（10 倍价），非本条目"
       ],
-      "verifiedBy": "实时 API 探针实测 (2026-09-22，同 flash 条目纪律)：smoke 200（model 回显 mimo-v2.6-pro）；图片 200 真识红；tool 200；maxOutputTokens=131072 claimed_ok 一次通过；1M 输入为 OpenRouter 元数据口径（未做输入探针）。1.02T-A42B 旗舰，AA 智能指数 v4.3.2 得 46 分（当前开源权重最高，超 Kimi K3/GLM-5.3）",
+      "verifiedBy": "实时 API 探针实测 (2026-09-22，同 flash 条目纪律)：smoke 200（model 回显 mimo-v2.6-pro）；图片 200 真识红；tool 200；maxOutputTokens=131072 claimed_ok 一次通过；1M 输入为 OpenRouter 元数据口径（未做输入探针）。1.02T-A42B 旗舰，AA 智能指数 v4.3.2 得 46 分（当前开源权重最高，超 Kimi K3/GLM-5.3）；2026-10-09 全量探针复验（smoke/output-limit/image/tool/stream 五项 200，maxOutputTokens=131072 claimed_ok 一次通过，图片识别正常，流式 SSE 正常），能力与上限无漂移；同日已写入宿主 ~/.workbuddy/models.json（custom-local:mimo-v2.6-pro，CLI 列表确认加载）",
       "familyNote": "V2.6 旗舰；⚠️ 与 v2.5-pro 跨代能力反转（全模态 vs 纯文本），alias 无重叠防套错；说「mimo pro」命中 v2.5-pro 旧档（ambiguous 时按代际提示用户二选一）",
       "channel": "direct",
       "keyIssuer": "小米 MiMo 开放平台"

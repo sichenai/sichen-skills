@@ -50,6 +50,21 @@ jobs:
           def err_body(e):
               return e.read().decode(errors="replace")[:500]
 
+          # referrer 脱敏：内网/局域域命中即抹域名留计数（防内网分享痕迹永久入档，2026-10-12）
+          REFERRER_REDACT = ("woa.com", ".internal", ".corp", ".local", ".lan")
+
+          def redact_referrers(node):
+              if isinstance(node, dict):
+                  ref = str(node.get("referrer", ""))
+                  if ref and any(b in ref.lower() for b in REFERRER_REDACT):
+                      print(f"[referrer] 已脱敏内网来源: {ref}")
+                      node["referrer"] = "redacted-internal"
+                  for v in node.values():
+                      redact_referrers(v)
+              elif isinstance(node, list):
+                  for v in node:
+                      redact_referrers(v)
+
           print(f"认证来源: {os.environ['TOKEN_SOURCE']}")
           bj_now = datetime.now(timezone(timedelta(hours=8)))
           repo = get("")  # 公开数据不依赖权限，此处失败=环境问题，直接抛

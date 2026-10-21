@@ -1,5 +1,25 @@
 # model-connector 更新日志
 
+## 2026-10-21 — v1.20.0（fast_connect.py 一键编排器 + 轮数预算 ≤15 回合）
+
+背景：10/20 实测归因（trace 解剖：20 分钟里约七成是 41+ 生成回合 × 单轮 ~20 秒，探针仅 2 发）——v1.19 砍了探针与提问等待，但轮数无约束、且宿主半成品条目逐字段修补费了 6 回合、收尾文书反噬 3-5 回合。
+
+- 新增 `scripts/fast_connect.py`：匹配→宿主体检→修配置（--dry-run 预览）→smoke(+图片)→宿主加载验证→注册表回写（写前重读），一次调用单行 JSON；`--id` 兜 ambiguous 二选一后直指条目。10/21 实测全链 smoke+image 双 200、回写正常
+- 快速接入模式：①轮数预算 ≤15 动作回合（交付说明报实际数）②最小链改走 fast_connect 一键 ③宿主半成品条目禁止逐字段慢慢试、fix 一次修 ④例行 CHANGELOG 收尾默认砍进慢车道（新发现才当场写）
+
+## 2026-10-20 — glm-5.3-flash 多模态复测 + 宿主条目修复（注册表版本 2026-09-07.2 → 2026-10-20.1）
+
+背景：ts 要求接入智谱 Coding Plan 的 glm-5.3-flash 并确认多模态。注册表 local 表已有该条目（2026-08-27 实测，confidence: tested），走快路径；但宿主 `~/.workbuddy/models.json` 里的条目是半成品（url 缺 `/chat/completions`、supportsImages/supportsReasoning 误填 false、无 token 上限）。
+
+### 探针（轻验证 + 图片必做，共 2 次请求，域名门禁 open.bigmodel.cn 生效）
+- smoke 200；图片输入 200 且正确识别红色图 → **多模态（图片输入）确认支持**，supportsImages: true
+- reasoning_content 持续输出 → 思考强制开启的 quirk 复现
+
+### 改动
+- 宿主 glm-5.3-flash 条目修正：url 补全 `/api/coding/paas/v4/chat/completions`、supportsImages/supportsReasoning 改 true、补 maxInputTokens=1000000 / maxOutputTokens=131072、vendor 归一 zhipu；CLI `--model` 列表确认 `custom-local:glm-5.3-flash` 已加载
+- local 注册表条目 lastVerified 刷至 2026-10-20，probe 补 imageInputRecheck/outputTestedOn
+- 慢车道登记：output 上限未复测、输入上限两档探针未做（见 curation_backlog.md）
+
 ## 2026-10-09 — v1.19.0（快速接入模式 + 保鲜期改事件驱动 + 慢车道待办机制）
 
 背景：44 分钟接入会话复盘（trace 实测：生成回合占已采样墙钟约九成、单轮 5-35 秒，工具近乎瞬时）+ 对抗性审查 6 项发现的落地修复。**收益口径如实声明**：本次改动的机制是「砍回合数 + 砍无事件触发的重复重测」，不承诺具体提速比例——44 分钟的内部分解存在 trace 盲区（12:27-13:08 无采样），任何百分比都是无依据估算。

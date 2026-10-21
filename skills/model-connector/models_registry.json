@@ -208,7 +208,7 @@
         "图片输入经实测正确识别红色（原生全模态，非仅文本）",
         "OpenRouter 对应路由 xiaomi/mimo-v2.6-flash（context_length 1048576 元数据一致，价 $0.14/$0.28 每百万）"
       ],
-      "verifiedBy": "实时 API 探针实测 (2026-09-22，key 管道读入不落盘)：smoke 200（model 回显 mimo-v2.6-flash）；图片 200 且 reasoning_content 自述识别红色（真多模态）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过。1M 输入为 OpenRouter 元数据 + 家族档口径（未做输入探针，接入时按需复验）；2026-09-22 发布（IT之家/搜狐/traictory 多源一致），定价沿用 V2.5（Flash ¥1/¥2 每百万），309B-A15B MoE",
+      "verifiedBy": "实时 API 探针实测 (2026-09-22，本机小米平台 key 管道读入不落盘)：smoke 200（model 回显 mimo-v2.6-flash）；图片 200 且 reasoning_content 自述识别红色（真多模态）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过。1M 输入为 OpenRouter 元数据 + 家族档口径（未做输入探针，接入时按需复验）；2026-09-22 发布（IT之家/搜狐/traictory 多源一致），定价沿用 V2.5（Flash ¥1/¥2 每百万），309B-A15B MoE",
       "familyNote": "V2.6 双版本之均衡档（309B-A15B，原生全模态：文/图/视频/音频输入）；⚠️ 能力反转警示：v2.6 全系全模态，v2.5-pro 纯文本——禁止从 v2.5-pro 套「不支持图片」；Pro-UltraSpeed 档（10 倍价最高 20 倍速）未收录，需要时走读文档流程",
       "channel": "direct",
       "keyIssuer": "小米 MiMo 开放平台"
@@ -242,7 +242,7 @@
         "图片输入经实测正确识别红色（原生全模态）",
         "OpenRouter 对应路由 xiaomi/mimo-v2.6-pro（$0.435/$0.87 每百万，对官方 ¥3/¥6）；UltraSpeed 为独立 id mimo-v2.6-pro-ultraspeed（10 倍价），非本条目"
       ],
-      "verifiedBy": "实时 API 探针实测 (2026-09-22，同 flash 条目纪律)：smoke 200（model 回显 mimo-v2.6-pro）；图片 200 真识红；tool 200；maxOutputTokens=131072 claimed_ok 一次通过；1M 输入为 OpenRouter 元数据口径（未做输入探针）。1.02T-A42B 旗舰，AA 智能指数 v4.3.2 得 46 分（当前开源权重最高，超 Kimi K3/GLM-5.3）；2026-10-09 全量探针复验（smoke/output-limit/image/tool/stream 五项 200，maxOutputTokens=131072 claimed_ok 一次通过，图片识别正常，流式 SSE 正常），能力与上限无漂移；同日已同步宿主 local 覆盖表",
+      "verifiedBy": "实时 API 探针实测 (2026-09-22，同 flash 条目纪律)：smoke 200（model 回显 mimo-v2.6-pro）；图片 200 真识红；tool 200；maxOutputTokens=131072 claimed_ok 一次通过；1M 输入为 OpenRouter 元数据口径（未做输入探针）。1.02T-A42B 旗舰，AA 智能指数 v4.3.2 得 46 分（当前开源权重最高，超 Kimi K3/GLM-5.3）；2026-10-09 全量探针复验（smoke/output-limit/image/tool/stream 五项 200，maxOutputTokens=131072 claimed_ok 一次通过，图片识别正常，流式 SSE 正常），能力与上限无漂移；同日已写入宿主 ~/.workbuddy/models.json（custom-local:mimo-v2.6-pro，CLI 列表确认加载）",
       "familyNote": "V2.6 旗舰；⚠️ 与 v2.5-pro 跨代能力反转（全模态 vs 纯文本），alias 无重叠防套错；说「mimo pro」命中 v2.5-pro 旧档（ambiguous 时按代际提示用户二选一）",
       "channel": "direct",
       "keyIssuer": "小米 MiMo 开放平台"
@@ -474,7 +474,7 @@
         "imageInput": "rejected-400",
         "toolCall": "ok-200"
       },
-      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 订阅端点（腾讯云域名，非 deepseek 官方域名，发 key 前声明）；model=deepseek/deepseek-v4-pro-0813 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
+      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 个人版订阅端点（腾讯云域名，非 deepseek 官方域名，发 key 前声明）；model=deepseek/deepseek-v4-pro-0813 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
       "channel": "cloud-hosted",
       "keyIssuer": "腾讯云（lkeap Token Plan 订阅，consola.cloud.tencent.com）",
       "channelNote": "模型是 DeepSeek 的，key 必须是腾讯云 Token Plan 发的（sk-tp- 前缀）；DeepSeek 官方 key 打此端点无效，反向同理——key↔渠道错配 401 头号来源；vendor=tencent-cloud（按「vendor 填提供 url 的一方」规范，2026-09-07 校验脚本抓错后修正）"
@@ -503,7 +503,7 @@
         "imageInput": "rejected-400",
         "toolCall": "ok-200"
       },
-      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 订阅端点（腾讯云域名，发 key 前声明）；model=deepseek/deepseek-v4-flash-0731 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
+      "verifiedBy": "实时 API 探针实测 (2026-08-20)，腾讯 Token Plan 个人版订阅端点（腾讯云域名，发 key 前声明）；model=deepseek/deepseek-v4-flash-0731 返回200；maxOutputTokens=393216 二分实测(512K被拒400)；supportsImages:false 图片请求实测400；supportsToolCall:true 工具调用实测；2026-09-07 自 local 表升级公共表（渠道三元重构）",
       "channel": "cloud-hosted",
       "keyIssuer": "腾讯云（lkeap Token Plan 订阅，consola.cloud.tencent.com）",
       "channelNote": "模型是 DeepSeek 的，key 必须是腾讯云 Token Plan 发的（sk-tp- 前缀）；DeepSeek 官方 key 打此端点无效，反向同理——key↔渠道错配 401 头号来源；vendor=tencent-cloud（按「vendor 填提供 url 的一方」规范，2026-09-07 校验脚本抓错后修正）"

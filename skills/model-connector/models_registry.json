@@ -342,7 +342,7 @@
       "quirks": [
         "思考模式强制开启：仅 low/high/max 三档可调，默认与编程推荐为 max，无关闭参数"
       ],
-      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，多源一致）：GLM-5.3 2026-08-14 发布（与 5.2 同基座，文本旗舰），API 已在开放平台正式开放调用，定价与 GLM-5.2 一致；1M 上下文/最大 128K 输出为官方文档口径，接入时全量探针。多模态在 5.3-flash（本机 local 表），5.3 主体为纯文本。Coding Plan 订阅用户走 local 表 glm-5.3-flash 同端点",
+      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，多源一致）：GLM-5.3 2026-08-14 发布（与 5.2 同基座，文本旗舰），API 已在开放平台正式开放调用，定价与 GLM-5.2 一致；1M 上下文/最大 128K 输出为官方文档口径，接入时全量探针。多模态在 5.3-flash（local 表），5.3 主体为纯文本。Coding Plan 订阅用户走 local 表 glm-5.3-flash 同端点",
       "familyNote": "GLM-5 系文本旗舰；GLM-5.3-Flash（320B-A18B）是首个原生多模态档（local 表在册）；说「接 glm 5.3」命中本条目，说「接 glm 5.3 flash 多模态」走 local 条目"
     },
     "qwen3.8-max": {
@@ -366,7 +366,7 @@
       "maxInputTokens": 131072,
       "maxOutputTokens": 8192,
       "confidence": "documented",
-      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，阿里云官方稿件）：Qwen3.8-Max 为阿里新一代基座旗舰，已接入千问AI平台并陆续开放 Token Plan 订阅；同端点接入过 GLM-5.3/DeepSeek-V4-Pro（compatible-mode 通道实证活跃）。ts 业务在用此模型（素材库打标后端，LLM_MODEL 配置）。⚠️ token 上限为估值（沿用 qwen 家族档，很可能需修正），能力矩阵未逐项核验，接入时全量探针",
+      "verifiedBy": "2026-09-07 搜索核实（zhipu-web-search std，阿里云官方稿件）：Qwen3.8-Max 为阿里新一代基座旗舰，已接入千问AI平台并陆续开放 Token Plan 订阅；同端点接入过 GLM-5.3/DeepSeek-V4-Pro（compatible-mode 通道实证活跃）。⚠️ token 上限为估值（沿用 qwen 家族档，很可能需修正），能力矩阵未逐项核验，接入时全量探针",
       "familyNote": "qwen 家族旗舰档；qwen-plus（均衡）/qwen-long/qwq-plus 同端点 id 可用，见 qwen-max 条目"
     },
     "minimax-m3-official": {

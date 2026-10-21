@@ -9,7 +9,7 @@
 
 ## 2026-10-20 — glm-5.3-flash 多模态复测 + 宿主条目修复（注册表版本 2026-09-07.2 → 2026-10-20.1）
 
-背景：ts 要求接入智谱 Coding Plan 的 glm-5.3-flash 并确认多模态。注册表 local 表已有该条目（2026-08-27 实测，confidence: tested），走快路径；但宿主 `~/.workbuddy/models.json` 里的条目是半成品（url 缺 `/chat/completions`、supportsImages/supportsReasoning 误填 false、无 token 上限）。
+背景：需求接入智谱 Coding Plan 的 glm-5.3-flash 并确认多模态。注册表 local 表已有该条目（2026-08-27 实测，confidence: tested），走快路径；但宿主 `~/.workbuddy/models.json` 里的条目是半成品（url 缺 `/chat/completions`、supportsImages/supportsReasoning 误填 false、无 token 上限）。
 
 ### 探针（轻验证 + 图片必做，共 2 次请求，域名门禁 open.bigmodel.cn 生效）
 - smoke 200；图片输入 200 且正确识别红色图 → **多模态（图片输入）确认支持**，supportsImages: true
@@ -41,7 +41,7 @@
 
 背景：ts 提「小米出了 mimo v2.6 跟 flash」。流程 = clarify-until-clear（事实问题信源解决，只把「入表置信度」交 ts 拍板）× 第一性原理（迭代 = 数据保鲜，不塞表不核证）。ts 拍板：现在全量探针。发布 9/22 凌晨（IT之家/搜狐/traictory 多源一致）。
 
-### 探针结果（本机小米平台 key，stdin 管道读入不落盘；域名门禁 api.xiaomimimo.com 全程生效）
+### 探针结果（小米平台 key，stdin 管道读入不落盘；域名门禁 api.xiaomimimo.com 全程生效）
 - **mimo-v2.6-flash（309B-A15B，¥1/¥2 每百万）**：smoke 200（model 回显核确 id）；图片 200 且 reasoning_content 自述识别红色（原生全模态实证）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过（131072 是真值非假边界）
 - **mimo-v2.6-pro（1.02T-A42B，¥3/¥6，AA 指数 46 分当前开源权重最高）**：四项同上全绿
 - **quirk 实证**：思考默认开启（reasoning_content 输出）——smoke 的 max_tokens=16 被推理吃光、content 为空；已写入两新条目 quirks（宿主小 max_tokens 会拿到空 content）
@@ -119,7 +119,7 @@
 ### 注册表（2026-09-07.2 → 2026-09-07.3）
 - **商汤 SenseNova 停用（条目级墓碑机制首发）**：local 两条（sensenova/deepseek-v4-flash、sensenova/glm-5.2）标 `tombstone:true+removedOn+removedBy`，历史探针数据保留供复活复核；trustedDomains 移除 token.sensenova.cn；match_registry.py 新增 disabled 状态（exit 5，tombstone 条目剔除出命中/预填）；SKILL.md 墓碑短路节+匹配说明同步，tests #10/#14 更新
 - **阿里平台更名**：qwen-max/qwen-plus 加 `vendorNote`「千问AI平台（原阿里云百炼）」，keyIssuer 同步（信源=ts 口述+长期记忆，dashscope 端点不受影响）
-- **旗舰补位（2026-09-07 搜索核实，zhipu-web-search std×4，多源一致）**：新增 `glm-5.3`（智谱文本旗舰 8/14 发布，开放平台 API 已开放，1M/128K 官方口径，思考强制 low/high/max 三档 quirk）与 `qwen3.8-max`（千问AI平台新一代基座旗舰，ts 业务在用）；`gpt-5.6-sol` 扩 familyNote（Sol 旗舰/Terra 均衡/Luna 轻量三档，Ultra 为模式非模型）+ 品牌别名 gpt5.6。新条目均 documented、token 上限为估值高亮，接入时全量探针。OpenAI/腾讯/DeepSeek/Kimi/小米旗舰已在册（Sol/hunyuan-turbos/v4-pro/k3/mimo-v2.5-pro），无缺口
+- **旗舰补位（2026-09-07 搜索核实，zhipu-web-search std×4，多源一致）**：新增 `glm-5.3`（智谱文本旗舰 8/14 发布，开放平台 API 已开放，1M/128K 官方口径，思考强制 low/high/max 三档 quirk）与 `qwen3.8-max`（千问AI平台新一代基座旗舰）；`gpt-5.6-sol` 扩 familyNote（Sol 旗舰/Terra 均衡/Luna 轻量三档，Ultra 为模式非模型）+ 品牌别名 gpt5.6。新条目均 documented、token 上限为估值高亮，接入时全量探针。OpenAI/腾讯/DeepSeek/Kimi/小米旗舰已在册（Sol/hunyuan-turbos/v4-pro/k3/mimo-v2.5-pro），无缺口
 - 活跃 18 条（公共 13/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error；匹配回归：qwen3.8→unique、glm 5.3→ambiguous（主体/flash 防套错，符合预期）、gpt5.6→unique
 
 ## 2026-09-07 — v1.13.0（渠道三元重构 + gpt4 复盘修补 + 公共表扩容六厂商）

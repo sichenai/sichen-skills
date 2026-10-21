@@ -110,7 +110,7 @@ agent_created: true
 ### 0. 双层注册表快路径（优先执行）
 本 skill 同目录下有两份注册表：
 - `models_registry.json` — **公共表**（随 skill 分发）：收录「任何持该渠道公开注册 key 的用户均可用」的端点，含两类 `channel`：**direct**（厂商直连，key=模型原厂发放，如 DeepSeek 官方）/ **cloud-hosted**（云厂商托管渠道，key=云厂商发放、模型是别家的，如腾讯云 Token Plan 的 DeepSeek、阿里千问平台接入的第三方模型）。每条目必带 `keyIssuer` 标注发卡方
-- `models_registry.local.json` — **私有覆盖表**（仅本机自用，**打包分发时必须排除**）：**private-relay** 私有中转端点（无公开注册渠道的 token 站/自建网关）
+- `models_registry.local.json` — **私有覆盖表**（仅本地自用，**打包分发时必须排除**）：**private-relay** 私有中转端点（无公开注册渠道的 token 站/自建网关）
 - **渠道铁律（2026-09-07 渠道三元重构）**：渠道 = 三元（direct / cloud-hosted / private-relay），公共/私有划分按「有无公开注册渠道」划线，不按「厂商直连与否」——云厂商托管的第三方模型属公共表（持云厂商 key 即可用），进 local 表会导致分发时丢失已实测条目。**快路径命中后必须核对用户 key 发卡方与条目 `keyIssuer` 一致**：云厂商 key 发往厂商直连端点（或反向）必 401，这不是 key 本身的问题，是渠道错配——先问渠道，再怀疑 key
 
 执行顺序：

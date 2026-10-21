@@ -295,7 +295,7 @@
       "maxInputTokens": 131072,
       "maxOutputTokens": 8192,
       "confidence": "documented",
-      "verifiedBy": "端点/兼容模式核实（2026-09-07）help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope；平台更名口径经 ts 口述+长期记忆佐证（原百炼→千问AI平台），端点域名 dashscope 未变；token 上限为估值（高亮：很可能需修正），接入时全量探针；平台另有 qwen-plus/qwen-long/qwq-plus 等 id 同端点可用"
+      "verifiedBy": "端点/兼容模式核实（2026-09-07）help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope；平台更名口径经 用户口述+长期记忆佐证（原百炼→千问AI平台），端点域名 dashscope 未变；token 上限为估值（高亮：很可能需修正），接入时全量探针；平台另有 qwen-plus/qwen-long/qwq-plus 等 id 同端点可用"
     },
     "qwen-plus": {
       "aliases": [
@@ -317,7 +317,7 @@
       "maxInputTokens": 131072,
       "maxOutputTokens": 8192,
       "confidence": "documented",
-      "verifiedBy": "同 qwen-max（2026-09-07 官方文档核实）；平台更名口径经 ts 口述+长期记忆佐证；token 上限为估值（高亮），接入时全量探针"
+      "verifiedBy": "同 qwen-max（2026-09-07 官方文档核实）；平台更名口径经 用户口述+长期记忆佐证；token 上限为估值（高亮），接入时全量探针"
     },
     "glm-5.3": {
       "aliases": [

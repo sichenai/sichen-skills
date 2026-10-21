@@ -45,7 +45,7 @@
 
 ## 2026-09-22 — v1.18.0（MiMo-V2.6 双版本全量探针收录 + v2.5 邀测生命周期挂账，注册表版本 2026-09-22.1）
 
-背景：ts 提「小米出了 mimo v2.6 跟 flash」。流程 = clarify-until-clear（事实问题信源解决，只把「入表置信度」交 ts 拍板）× 第一性原理（迭代 = 数据保鲜，不塞表不核证）。ts 拍板：现在全量探针。发布 9/22 凌晨（IT之家/搜狐/traictory 多源一致）。
+背景：用户提「小米出了 mimo v2.6 跟 flash」。流程 = clarify-until-clear（事实问题信源解决，只把「入表置信度」交用户拍板）× 第一性原理（迭代 = 数据保鲜，不塞表不核证）。用户拍板：现在全量探针。发布 9/22 凌晨（IT之家/搜狐/traictory 多源一致）。
 
 ### 探针结果（小米平台 key，stdin 管道读入不落盘；域名门禁 api.xiaomimimo.com 全程生效）
 - **mimo-v2.6-flash（309B-A15B，¥1/¥2 每百万）**：smoke 200（model 回显核确 id）；图片 200 且 reasoning_content 自述识别红色（原生全模态实证）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过（131072 是真值非假边界）
@@ -61,12 +61,12 @@
 
 ### 遗留
 - 输入上限未做两档探针（1M 为元数据+家族口径）；邀测 9/29 前后到期，届时需复验 v2.5 两条 id，死则转墓碑
-- UltraSpeed 档（mimo-v2.6-pro-ultraspeed，$4.35/$8.7 每百万）未收录，ts 需要时走读文档流程
+- UltraSpeed 档（mimo-v2.6-pro-ultraspeed，$4.35/$8.7 每百万）未收录，用户需要时走读文档流程
 - 官方 /v1/models 需 key（401），元数据白拿姿势对小米平台不适用——探针分级表「Moonshot 系同走此路」不适用小米，已在条目注记用 OpenRouter 替代
 
 ## 2026-09-18 — v1.17.0（V4.1-Flash 收编 vision-exp + GLM-5.3-FlashX 收录 + V4-Pro 生命周期更新，注册表版本 2026-09-18.1）
 
-背景：ts 提出两个新模型（deepseek v4.1flash / GLM5.3FLASHX）。第一性原理拆解后定位真实缺口：不是「有新模型就塞表」，而是 ①数据保鲜（官方生命周期变动）②新条目证据分级。全程信源：DeepSeek 官方 pricing 页一手 fetch + 智谱官方 docs 定点搜索（std/pro+domain filter、sogou）。
+背景：用户提出两个新模型（deepseek v4.1flash / GLM5.3FLASHX）。第一性原理拆解后定位真实缺口：不是「有新模型就塞表」，而是 ①数据保鲜（官方生命周期变动）②新条目证据分级。全程信源：DeepSeek 官方 pricing 页一手 fetch + 智谱官方 docs 定点搜索（std/pro+domain filter、sogou）。
 
 ### DeepSeek 侧（官方 pricing 页实证 2026-09-18）
 - **新增 `deepseek-v4.1-flash`（documented）**：9/10 发布，model=deepseek-flash，1M/384K 官方口径，原生 vision（官方 features 表 Vision ✓）；552B MoE 新架构（输入激活 8B/输出 16B）。接入时全量探针
@@ -103,13 +103,13 @@
 - ⚠️ 过程教训：首次回写踩 7 个 schema 类型 ERROR（outputRejected 写了 null、toolCall 写 bool、supportsToolCall/Reasoning 写 null、上限写 null）——标准类型以 validate_registry.py 为准：null 不许写、未测键不写、结果码用字符串 "ok-200"；修正后 0 error
 
 ### 遗留
-- probe.py 不支持 anthropic 方言（x-api-key + /v1/messages），anthropic 端点探针只能手动 curl——是否加子命令待 ts 拍板
+- probe.py 不支持 anthropic 方言（x-api-key + /v1/messages），anthropic 端点探针只能手动 curl——是否加子命令待用户拍板
 - vision-exp 的 tool/reasoning/上下限未实测，下次接入该条目时全量补
-- SKILL.md 版本号未动（无流程变更，纯数据更新）——若按「改注册表必同版号」惯例需 ts 裁量
+- SKILL.md 版本号未动（无流程变更，纯数据更新）——若按「改注册表必同版号」惯例需用户裁量
 
 ## 2026-09-07 — v1.15.0（新厂商线：MiniMax 官方直连 + 字节豆包，注册表版本 2026-09-07.4）
 
-背景：ts 点头开新厂商线（明确只做两家，Google/Anthropic 暂不做）。
+背景：用户点头开新厂商线（明确只做两家，Google/Anthropic 暂不做）。
 
 ### 注册表（2026-09-07.3 → 2026-09-07.4）
 - **新增 `minimax-m3-official`（MiniMax 开放平台官方直连）**：国内主域 api.minimaxi.com（国际 api.minimax.io 同构），OpenAI 兼容，modelId 大写驼峰 MiniMax-M3（quirk）；原生多模态（官方 curl 示例含 image_url）；thinking adaptive + max_completion_tokens 两条方言 quirk；1M ctx 多源一致；输出上限估值高亮。与 local tokenhub 中转条目、OpenRouter :free 条目构成三方歧义，按 key 发卡方分流（familyNote 已写明）
@@ -120,17 +120,17 @@
 
 ## 2026-09-07 — v1.14.0（条目级墓碑 + 旗舰补位，注册表版本 2026-09-07.3）
 
-背景：ts 两连拍板（删除商汤；注册表补各家旗舰，第一性原理拆解后定位真实缺口）。
+背景：用户两连拍板（删除商汤；注册表补各家旗舰，第一性原理拆解后定位真实缺口）。
 
 ### 注册表（2026-09-07.2 → 2026-09-07.3）
 - **商汤 SenseNova 停用（条目级墓碑机制首发）**：local 两条（sensenova/deepseek-v4-flash、sensenova/glm-5.2）标 `tombstone:true+removedOn+removedBy`，历史探针数据保留供复活复核；trustedDomains 移除 token.sensenova.cn；match_registry.py 新增 disabled 状态（exit 5，tombstone 条目剔除出命中/预填）；SKILL.md 墓碑短路节+匹配说明同步，tests #10/#14 更新
-- **阿里平台更名**：qwen-max/qwen-plus 加 `vendorNote`「千问AI平台（原阿里云百炼）」，keyIssuer 同步（信源=ts 口述+长期记忆，dashscope 端点不受影响）
+- **阿里平台更名**：qwen-max/qwen-plus 加 `vendorNote`「千问AI平台（原阿里云百炼）」，keyIssuer 同步（信源=用户口述+长期记忆，dashscope 端点不受影响）
 - **旗舰补位（2026-09-07 搜索核实，zhipu-web-search std×4，多源一致）**：新增 `glm-5.3`（智谱文本旗舰 8/14 发布，开放平台 API 已开放，1M/128K 官方口径，思考强制 low/high/max 三档 quirk）与 `qwen3.8-max`（千问AI平台新一代基座旗舰）；`gpt-5.6-sol` 扩 familyNote（Sol 旗舰/Terra 均衡/Luna 轻量三档，Ultra 为模式非模型）+ 品牌别名 gpt5.6。新条目均 documented、token 上限为估值高亮，接入时全量探针。OpenAI/腾讯/DeepSeek/Kimi/小米旗舰已在册（Sol/hunyuan-turbos/v4-pro/k3/mimo-v2.5-pro），无缺口
 - 活跃 18 条（公共 13/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error；匹配回归：qwen3.8→unique、glm 5.3→ambiguous（主体/flash 防套错，符合预期）、gpt5.6→unique
 
 ## 2026-09-07 — v1.13.0（渠道三元重构 + gpt4 复盘修补 + 公共表扩容六厂商）
 
-背景：gpt4 接入会话三问复盘（ts 发现）+ 公共表覆盖审查（第一性原理 + 对抗性审查双模式）。核心发现：渠道真实结构是三元（厂商直连 / 云厂商托管 / 私有中转），旧「公共=官方直连、local=中转」二元定义容纳不了云渠道，导致 key↔渠道错配 401 无防护、云渠道实测条目被分发排除两个缺陷。
+背景：gpt4 接入会话三问复盘（用户发现）+ 公共表覆盖审查（第一性原理 + 对抗性审查双模式）。核心发现：渠道真实结构是三元（厂商直连 / 云厂商托管 / 私有中转），旧「公共=官方直连、local=中转」二元定义容纳不了云渠道，导致 key↔渠道错配 401 无防护、云渠道实测条目被分发排除两个缺陷。
 
 ### 注册表（版本 2026-09-07.1）
 - 条目新增 `channel`（direct / cloud-hosted / private-relay）、`keyIssuer`（发卡方）、`channelNote`（渠道差异与错配症状）三字段；存量 5 条补齐

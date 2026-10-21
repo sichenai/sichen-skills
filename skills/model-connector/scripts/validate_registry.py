@@ -157,7 +157,7 @@ def main():
             pm = tables["public"].get("models") or {}
             for mid, m in models.items():
                 if mid in pm and host_of(pm[mid].get("url")) != host_of(m.get("url")):
-                    warns.append("[local:%s] 覆盖了公共表同名条目且换了端点域名（%s → %s），确认这是本机意图"
+                    warns.append("[local:%s] 覆盖了公共表同名条目且换了端点域名（%s → %s），确认这是用户意图"
                                  % (mid, host_of(pm[mid].get("url")), host_of(m.get("url"))))
 
     for w in warns:

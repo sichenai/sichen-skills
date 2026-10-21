@@ -1,5 +1,11 @@
 # model-connector 更新日志
 
+## 2026-10-21 — v1.20.1（fast_connect 防并发补强 + P3 清扫，Zcode 异源复审跟进）
+
+- **P2 修复**：写前重读窗口完备化——原实现只防「采样后」的修改，防不了「入口读入→采样」窗口（cmd_run 里的 sig0 死变量是佐证）；现入口 `read_stable` 采 sig0 + 内容快照传入 apply_fix/book_registry，写前 sig+内容双比对，命中即 `conflict:true` 中止不覆盖。行为验证：入口后篡改文件 → conflict 触发 ✓
+- **P3 清扫**：url 解析失败 fail-fast（不在无门禁下发 key）、find_host_entry None 保护统一、backlog 追加原子化、原子写加 fsync
+- 新增 tests/scenarios.md 场景 21（处理期间宿主被改写 → conflict 中止）
+
 ## 2026-10-21 — v1.20.0（fast_connect.py 一键编排器 + 轮数预算 ≤15 回合）
 
 背景：10/20 实测归因（trace 解剖：20 分钟里约七成是 41+ 生成回合 × 单轮 ~20 秒，探针仅 2 发）——v1.19 砍了探针与提问等待，但轮数无约束、且宿主半成品条目逐字段修补费了 6 回合、收尾文书反噬 3-5 回合。

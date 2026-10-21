@@ -20,6 +20,7 @@
 """
 
 import argparse
+import copy
 import datetime
 import json
 import os
@@ -59,6 +60,22 @@ def atomic_write_json(path, data):
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def atomic_write_text(path, text):
+    d = os.path.dirname(path) or "."
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".fc_", suffix=".txt")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp):
@@ -69,6 +86,24 @@ def file_sig(path):
     """写前重读比对用的文件签名（size+mtime）。"""
     st = os.stat(path)
     return (st.st_size, st.st_mtime_ns)
+
+
+def read_stable(path):
+    """稳定读：stat→read→stat 一致才返回（不一致重读一次）。返回 (data, sig)。"""
+    for _ in range(2):
+        sig1 = file_sig(path)
+        data = load_json(path)
+        if data is not None and file_sig(path) == sig1:
+            return data, sig1
+    fail("io", "文件读取期间持续被修改，无法取得稳定快照: %s" % path)
+
+
+def assert_not_modified(path, sig_entry, snapshot):
+    """写前防并发（P2 修复）：sig 与内容双比对，覆盖「入口读入→写入」全程窗口。"""
+    current, sig_now = read_stable(path)
+    if sig_now != sig_entry or current != snapshot:
+        fail("conflict", "目标文件在处理期间被外部修改（并发冲突），已中止不覆盖；请重跑", conflict=True)
+    return current
 
 
 # ---------------- 注册表层 ----------------
@@ -119,9 +154,14 @@ def diagnose(reg, host_entry):
     return defects
 
 
-def apply_fix(reg, host, host_path, dry_run):
-    """修宿主条目元数据（不动 apiKey/name）。返回 (new_host, changed_fields, created)。"""
+def apply_fix(reg, host, host_path, dry_run, sig_entry):
+    """修宿主条目元数据（不动 apiKey/name）。返回 (new_host, changed_fields, created)。
+
+    防并发：snapshot 在任何修改前冻结入口状态，写前 assert_not_modified
+    覆盖「入口读入→写入」全程（10/21 Zcode 复审 P2 修复）。
+    """
     model_id = reg["modelId"]
+    snapshot = copy.deepcopy(host)  # 入口状态内容快照（修改前冻结）
     entry = find_host_entry(host, model_id)
     created = entry is None
     if created:
@@ -135,11 +175,7 @@ def apply_fix(reg, host, host_path, dry_run):
             entry[f] = exp
     if dry_run:
         return host, changed, created
-    sig = file_sig(host_path)
-    current = load_json(host_path)
-    if current is not None and file_sig(host_path) != sig:
-        fail("fix", "写前重读发现宿主配置在处理期间被修改（并发冲突），已中止；请重跑",
-             conflict=True)
+    assert_not_modified(host_path, sig_entry, snapshot)
     atomic_write_json(host_path, host)
     back = load_json(host_path)
     if back is None:
@@ -177,11 +213,12 @@ def host_load_check(model_id):
 # ---------------- 回写层 ----------------
 
 def book_registry(reg, model_id, probe_results, backlog_text):
-    """注册表回写 lastVerified/probe；写前重读比对。"""
+    """注册表回写 lastVerified/probe；写前重读比对（同 apply_fix 防并发口径）。"""
     path, data = locate_entry_layer(model_id)
     if not data or model_id not in (data.get("models") or {}):
         fail("book", "目标条目不在任何注册表层，无法回写（应先走读文档流程收录）")
-    sig = file_sig(path)
+    snapshot = copy.deepcopy(data)  # 内容快照（修改前冻结）
+    sig_entry = file_sig(path)
     entry = data["models"][model_id]
     today = datetime.date.today().isoformat()
     entry["lastVerified"] = today
@@ -194,15 +231,18 @@ def book_registry(reg, model_id, probe_results, backlog_text):
     # version bump
     ver = data.get("version") or "0"
     data["version"] = ver.split(".")[0] + "." + str(int(ver.split(".")[-1]) + 1 if ver.split(".")[-1].isdigit() else 1)
-    if file_sig(path) != sig:
-        fail("book", "写前重读发现注册表在处理期间被修改（并发冲突），已中止；请重跑", conflict=True)
+    assert_not_modified(path, sig_entry, snapshot)
     atomic_write_json(path, data)
     out = {"registry_path": path, "lastVerified": today, "version": data["version"]}
     if backlog_text:
         bl = os.path.join(SKILL_DIR, "curation_backlog.md")
-        with open(bl, "a", encoding="utf-8") as f:
-            f.write("- %s | %s | %s | 下次接入同厂商 / 用户点名 / 定期清理\n"
-                    % (today, model_id, backlog_text.strip()))
+        try:
+            with open(bl, encoding="utf-8") as f:
+                base = f.read()
+        except FileNotFoundError:
+            base = "# model-connector 慢车道待办（curation backlog）\n\n"
+        atomic_write_text(bl, base + "- %s | %s | %s | 下次接入同厂商 / 用户点名 / 定期清理\n"
+                          % (today, model_id, backlog_text.strip()))
         out["backlog"] = "appended"
     return out
 
@@ -228,6 +268,18 @@ def resolve(phrase, entry_id=None):
     return m["hits"][0]["entry"]
 
 
+def domain_of(url):
+    """解析 url 域名；解析失败 fail-fast——不在无门禁下把 key 发出去（10/21 复审 P3）。"""
+    try:
+        from urllib.parse import urlparse
+        netloc = urlparse(url).netloc
+    except Exception:
+        netloc = ""
+    if not netloc:
+        fail("domain", "注册表 url 无法解析出域名，拒绝在无门禁下发 key: %r" % url)
+    return netloc
+
+
 def cmd_inspect(args):
     reg = resolve(args.phrase, getattr(args, "id", None))
     host_path = os.path.expanduser(args.host_config)
@@ -247,18 +299,18 @@ def cmd_inspect(args):
 def cmd_fix(args):
     reg = resolve(args.phrase, getattr(args, "id", None))
     host_path = os.path.expanduser(args.host_config)
-    host = load_json(host_path)
+    host, sig0 = read_stable(host_path)
     if host is None:
         fail("fix", "宿主配置不可读: %s" % host_path)
-    new_host, changed, created = apply_fix(reg, host, host_path, args.dry_run)
+    new_host, changed, created = apply_fix(reg, host, host_path, args.dry_run, sig0)
+    need_key = created and not (find_host_entry(new_host or [], reg["modelId"]) or {}).get("apiKey", "")
     emit({"ok": True, "step": "fix", "modelId": reg["modelId"], "created": created,
           "dry_run": args.dry_run, "changed": changed,
-          "need_key": created,
+          "need_key": need_key,
           "summary": "%s条目 %s：%s%s" % (
               "新建" if created else "修正", reg["modelId"],
               "、".join("%s %s→%s" % (c["field"], c["from"], c["to"]) for c in changed) or "无需改动",
-              "；apiKey 为空需用户补" if created and not (new_host and any(
-                  m.get("id") == reg["modelId"] and m.get("apiKey") for m in new_host if isinstance(m, dict))) else "")})
+              "；apiKey 为空需用户补" if need_key else "")})
 
 
 def cmd_verify(args):
@@ -269,12 +321,7 @@ def cmd_verify(args):
     key = (entry or {}).get("apiKey") or ""
     if not key:
         fail("verify", "宿主条目缺 apiKey（新建条目需先由用户补 key）", need_key=True)
-    domain = None
-    try:
-        from urllib.parse import urlparse
-        domain = urlparse(reg["url"]).netloc
-    except Exception:
-        pass
+    domain = domain_of(reg["url"])
     ok_s, smoke = run_probe("smoke", reg["url"], reg["modelId"], key, domain)
     results = {"smoke": smoke.get("result")}
     ok = ok_s
@@ -310,8 +357,7 @@ def cmd_book(args):
 def cmd_run(args):
     reg = resolve(args.phrase, getattr(args, "id", None))
     host_path = os.path.expanduser(args.host_config)
-    sig0 = file_sig(host_path) if os.path.exists(host_path) else None
-    host = load_json(host_path)
+    host, sig0 = read_stable(host_path)  # 入口稳定读：sig0 覆盖「读入→写入」全程防并发
     if host is None:
         fail("run", "宿主配置不可读: %s" % host_path)
     entry = find_host_entry(host, reg["modelId"])
@@ -319,13 +365,11 @@ def cmd_run(args):
     created = entry is None
     changed = []
     if defects and not args.dry_run:
-        host, changed, created = apply_fix(reg, host, host_path, False)
+        host, changed, created = apply_fix(reg, host, host_path, False, sig0)
     elif defects:
         changed = [{"field": d["field"], "from": d["current"], "to": d["expected"]} for d in defects]
 
     steps = {"inspect": {"defects": defects}}
-    need_key = created and not find_host_entry(load_json(host_path) or [], reg["modelId"]).get("apiKey", "") \
-        if (created and not args.dry_run) else False
     if args.dry_run:
         emit({"ok": True, "step": "run", "dry_run": True, "modelId": reg["modelId"],
               "planned_fix": changed, "summary": "dry-run：将修 %d 处，不发探针不回写" % len(changed)})
@@ -338,12 +382,7 @@ def cmd_run(args):
               "summary": "配置已修好但 apiKey 为空——请用户提供 key 后补 verify/book（或走合并提问）"})
         return
 
-    domain = None
-    try:
-        from urllib.parse import urlparse
-        domain = urlparse(reg["url"]).netloc
-    except Exception:
-        pass
+    domain = domain_of(reg["url"])
     ok_s, smoke = run_probe("smoke", reg["url"], reg["modelId"], key, domain)
     probe_results = {"smoke": smoke.get("result")}
     ok = ok_s

@@ -24,6 +24,7 @@
 | 18 | 「接 deepseek v4 flash」 | ambiguous（腾讯 TP 0731 条目 vs 官方 v4.1-flash）→ 单条提问二选一：key 发卡方核对（sk-tp- 腾讯 TP vs platform.deepseek.com 官方）；这也是渠道铁律的标准触发场景 |
 | 19 | 「接 mimo flash」/「接 mimo v2.6」 | 「mimo flash」唯一命中 v2.6-flash（tested 且无生命周期风险信号 → 轻验证）；「mimo v2.6」ambiguous 二选一（flash vs pro），禁止自行挑；「mimo pro」唯一命中 v2.5-pro 旧档 → 先亮牌代际差（v2.6 全模态 vs v2.5-pro 纯文本 + 退役风险：v2.5 已挂 2026-10-21 下线注记 → 命中生命周期风险信号先轻查再确认） |
 | 20 | v2.5 旧 id 接入（邀测已过 2026-09-29 后） | 先 smoke 复验：200 → 按注册表注记正常接（风险自担）；404 → 转 v2.6 家族条目推荐替代，v2.5 条目转墓碑 |
+| 21 | fast_connect fix/run 处理期间宿主文件被外部改写（UI 保存/重启重写 models.json） | 写前 sig+内容双比对命中 → `conflict:true` 中止不覆盖，请重跑；禁止旧快照覆盖宿主新状态（10/21 复审 P2 修复的行为基线） |
 
 ## 判定纪律
 

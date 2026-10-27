@@ -1,0 +1,240 @@
+{
+  "snapshot_date": "2026-10-26",
+  "public": {
+    "stars": 3,
+    "forks": 1,
+    "watchers": 0,
+    "open_issues": 0
+  },
+  "clones": {
+    "count": 497,
+    "uniques": 424,
+    "clones": [
+      {
+        "timestamp": "2026-10-11T00:00:00Z",
+        "count": 28,
+        "uniques": 26
+      },
+      {
+        "timestamp": "2026-10-12T00:00:00Z",
+        "count": 63,
+        "uniques": 42
+      },
+      {
+        "timestamp": "2026-10-13T00:00:00Z",
+        "count": 27,
+        "uniques": 26
+      },
+      {
+        "timestamp": "2026-10-14T00:00:00Z",
+        "count": 28,
+        "uniques": 28
+      },
+      {
+        "timestamp": "2026-10-15T00:00:00Z",
+        "count": 28,
+        "uniques": 27
+      },
+      {
+        "timestamp": "2026-10-16T00:00:00Z",
+        "count": 31,
+        "uniques": 29
+      },
+      {
+        "timestamp": "2026-10-17T00:00:00Z",
+        "count": 29,
+        "uniques": 28
+      },
+      {
+        "timestamp": "2026-10-18T00:00:00Z",
+        "count": 31,
+        "uniques": 31
+      },
+      {
+        "timestamp": "2026-10-19T00:00:00Z",
+        "count": 48,
+        "uniques": 37
+      },
+      {
+        "timestamp": "2026-10-20T00:00:00Z",
+        "count": 35,
+        "uniques": 31
+      },
+      {
+        "timestamp": "2026-10-21T00:00:00Z",
+        "count": 55,
+        "uniques": 38
+      },
+      {
+        "timestamp": "2026-10-22T00:00:00Z",
+        "count": 28,
+        "uniques": 28
+      },
+      {
+        "timestamp": "2026-10-23T00:00:00Z",
+        "count": 36,
+        "uniques": 30
+      },
+      {
+        "timestamp": "2026-10-24T00:00:00Z",
+        "count": 30,
+        "uniques": 29
+      }
+    ]
+  },
+  "views": {
+    "count": 79,
+    "uniques": 42,
+    "views": [
+      {
+        "timestamp": "2026-10-11T00:00:00Z",
+        "count": 13,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-10-12T00:00:00Z",
+        "count": 12,
+        "uniques": 6
+      },
+      {
+        "timestamp": "2026-10-13T00:00:00Z",
+        "count": 4,
+        "uniques": 4
+      },
+      {
+        "timestamp": "2026-10-14T00:00:00Z",
+        "count": 22,
+        "uniques": 13
+      },
+      {
+        "timestamp": "2026-10-15T00:00:00Z",
+        "count": 6,
+        "uniques": 4
+      },
+      {
+        "timestamp": "2026-10-16T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-10-17T00:00:00Z",
+        "count": 2,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-10-18T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-10-19T00:00:00Z",
+        "count": 4,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-10-20T00:00:00Z",
+        "count": 4,
+        "uniques": 4
+      },
+      {
+        "timestamp": "2026-10-21T00:00:00Z",
+        "count": 4,
+        "uniques": 4
+      },
+      {
+        "timestamp": "2026-10-22T00:00:00Z",
+        "count": 2,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-10-23T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-10-24T00:00:00Z",
+        "count": 4,
+        "uniques": 3
+      }
+    ]
+  },
+  "popular_paths": [
+    {
+      "path": "/sichenai/sichen-skills",
+      "title": "Overview",
+      "count": 48,
+      "uniques": 37
+    },
+    {
+      "path": "/sichenai/sichen-skills/blob/main/skills/model-connector/SKILL.md",
+      "title": "/blob/main/skills/model-connector/SKILL.md",
+      "count": 11,
+      "uniques": 7
+    },
+    {
+      "path": "/sichenai/sichen-skills/tree/main/skills/model-connector",
+      "title": "/tree/main/skills/model-connector",
+      "count": 6,
+      "uniques": 2
+    },
+    {
+      "path": "/sichenai/sichen-skills/tree/main/skills",
+      "title": "/tree/main/skills",
+      "count": 4,
+      "uniques": 3
+    },
+    {
+      "path": "/sichenai/sichen-skills/tree/main",
+      "title": "/tree/main",
+      "count": 2,
+      "uniques": 2
+    },
+    {
+      "path": "/sichenai/sichen-skills/graphs/traffic",
+      "title": "/graphs/traffic",
+      "count": 2,
+      "uniques": 1
+    },
+    {
+      "path": "/sichenai/sichen-skills/commit/d97ee84406573c93c60bdf41cfd69af43a93825e",
+      "title": "/commit/d97ee84406573c93c60bdf41cfd69af43a93825e",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "path": "/sichenai/sichen-skills/fork",
+      "title": "/fork",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "path": "/sichenai/sichen-skills/pulse",
+      "title": "/pulse",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "path": "/sichenai/sichen-skills/tree/main/assets",
+      "title": "/tree/main/assets",
+      "count": 1,
+      "uniques": 1
+    }
+  ],
+  "popular_referrers": [
+    {
+      "referrer": "Bing",
+      "count": 5,
+      "uniques": 4
+    },
+    {
+      "referrer": "doubao.com",
+      "count": 4,
+      "uniques": 1
+    },
+    {
+      "referrer": "github.com",
+      "count": 3,
+      "uniques": 3
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+# model-connector 更新日志
+
+## 2026-10-21 — v1.20.1（fast_connect 防并发补强 + P3 清扫，Zcode 异源复审跟进）
+
+- **P2 修复**：写前重读窗口完备化——原实现只防「采样后」的修改，防不了「入口读入→采样」窗口（cmd_run 里的 sig0 死变量是佐证）；现入口 `read_stable` 采 sig0 + 内容快照传入 apply_fix/book_registry，写前 sig+内容双比对，命中即 `conflict:true` 中止不覆盖。行为验证：入口后篡改文件 → conflict 触发 ✓
+- **P3 清扫**：url 解析失败 fail-fast（不在无门禁下发 key）、find_host_entry None 保护统一、backlog 追加原子化、原子写加 fsync
+- 新增 tests/scenarios.md 场景 21（处理期间宿主被改写 → conflict 中止）
+
+## 2026-10-21 — v1.20.0（fast_connect.py 一键编排器 + 轮数预算 ≤15 回合）
+
+背景：10/20 实测归因（trace 解剖：20 分钟里约七成是 41+ 生成回合 × 单轮 ~20 秒，探针仅 2 发）——v1.19 砍了探针与提问等待，但轮数无约束、且宿主半成品条目逐字段修补费了 6 回合、收尾文书反噬 3-5 回合。
+
+- 新增 `scripts/fast_connect.py`：匹配→宿主体检→修配置（--dry-run 预览）→smoke(+图片)→宿主加载验证→注册表回写（写前重读），一次调用单行 JSON；`--id` 兜 ambiguous 二选一后直指条目。10/21 实测全链 smoke+image 双 200、回写正常
+- 快速接入模式：①轮数预算 ≤15 动作回合（交付说明报实际数）②最小链改走 fast_connect 一键 ③宿主半成品条目禁止逐字段慢慢试、fix 一次修 ④例行 CHANGELOG 收尾默认砍进慢车道（新发现才当场写）
+
+## 2026-10-20 — glm-5.3-flash 多模态复测 + 宿主条目修复（注册表版本 2026-09-07.2 → 2026-10-20.1）
+
+背景：需求接入智谱 Coding Plan 的 glm-5.3-flash 并确认多模态。注册表 local 表已有该条目（2026-08-27 实测，confidence: tested），走快路径；但宿主 `~/.workbuddy/models.json` 里的条目是半成品（url 缺 `/chat/completions`、supportsImages/supportsReasoning 误填 false、无 token 上限）。
+
+### 探针（轻验证 + 图片必做，共 2 次请求，域名门禁 open.bigmodel.cn 生效）
+- smoke 200；图片输入 200 且正确识别红色图 → **多模态（图片输入）确认支持**，supportsImages: true
+- reasoning_content 持续输出 → 思考强制开启的 quirk 复现
+
+### 改动
+- 宿主 glm-5.3-flash 条目修正：url 补全 `/api/coding/paas/v4/chat/completions`、supportsImages/supportsReasoning 改 true、补 maxInputTokens=1000000 / maxOutputTokens=131072、vendor 归一 zhipu；CLI `--model` 列表确认 `custom-local:glm-5.3-flash` 已加载
+- local 注册表条目 lastVerified 刷至 2026-10-20，probe 补 imageInputRecheck/outputTestedOn
+- 慢车道登记：output 上限未复测、输入上限两档探针未做（见 curation_backlog.md）
+
+## 2026-10-09 — v1.19.0（快速接入模式 + 保鲜期改事件驱动 + 慢车道待办机制）
+
+背景：44 分钟接入会话复盘（trace 实测：生成回合占已采样墙钟约九成、单轮 5-35 秒，工具近乎瞬时）+ 对抗性审查 6 项发现的落地修复。**收益口径如实声明**：本次改动的机制是「砍回合数 + 砍无事件触发的重复重测」，不承诺具体提速比例——44 分钟的内部分解存在 trace 盲区（12:27-13:08 无采样），任何百分比都是无依据估算。
+
+### 改动
+- **新增「快速接入模式」（默认节奏）**：同回合并行工具调用；合并提问（合并轮次不合并同意，双重确认/白名单语义不降级）；最小交付链路 = 合并提问 → 写配置 → smoke → 宿主验证 → 交付
+- **探针分级改事件驱动**：废除「lastVerified ≤ 14 天」硬窗；轻验证 = tested 且无生命周期风险信号（退役/下线字样、recheckAfter 到期、>90 天、用户报错）；命中信号先做生命周期轻查（1 次抓取），查不到按全量；报错漂移走针对性补测兜底；「厂商发新版」不可检测，明确不作触发器
+- **慢车道待办机制**：推迟的全量探针/回写/CHANGELOG 必须登记 `curation_backlog.md`（无登记不许推迟），交付说明列待办清单
+- **写前重读防并发**：注册表写前重读比对 version，禁止旧快照覆盖并发写入（实证：2026-10-09 两会话并行写注册表）
+- 交付说明新增「快慢车道取舍声明」「慢车道待办」两项
+
+### 修复对照（对抗性审查 6 项 → 上述改动）
+收益数字口径（改为条件式声明，见本条目背景）/ 触发器循环依赖（→ 生命周期风险信号表）/ trade-off 隐藏（→ 两档策略明示代价）/ 补跑无归属（→ curation_backlog.md）/ 同意粒度（→ 合并提问红线）/ 并发冲突（→ 写前重读）
+
+### 复检残留修复（2026-10-09 复检，2 处 P3）
+信号 2 补「`lastVerified` 缺失」覆盖（旧规则有、v1.19 初稿漏）；tests/scenarios.md 场景 15/19 同步事件驱动口径（废「14 天/保鲜期」表述）
+
+## 2026-09-22 — v1.18.0（MiMo-V2.6 双版本全量探针收录 + v2.5 邀测生命周期挂账，注册表版本 2026-09-22.1）
+
+背景：用户提「小米出了 mimo v2.6 跟 flash」。流程 = clarify-until-clear（事实问题信源解决，只把「入表置信度」交用户拍板）× 第一性原理（迭代 = 数据保鲜，不塞表不核证）。用户拍板：现在全量探针。发布 9/22 凌晨（IT之家/搜狐/traictory 多源一致）。
+
+### 探针结果（小米平台 key，stdin 管道读入不落盘；域名门禁 api.xiaomimimo.com 全程生效）
+- **mimo-v2.6-flash（309B-A15B，¥1/¥2 每百万）**：smoke 200（model 回显核确 id）；图片 200 且 reasoning_content 自述识别红色（原生全模态实证）；tool 200 正确发起 get_weather；maxOutputTokens=131072 claimed_ok 一次通过（131072 是真值非假边界）
+- **mimo-v2.6-pro（1.02T-A42B，¥3/¥6，AA 指数 46 分当前开源权重最高）**：四项同上全绿
+- **quirk 实证**：思考默认开启（reasoning_content 输出）——smoke 的 max_tokens=16 被推理吃光、content 为空；已写入两新条目 quirks（宿主小 max_tokens 会拿到空 content）
+- **v2.5 邀测疑点核销**：IT之家 9/22 报道「邀测 1 周后结束、邀测用户须切换模型名称」→ 两条 v2.5 旧 id 现场复验 smoke 均 200（9/22 仍活），但退役风险挂账：v2.5 条目补生命周期注记（2026-09-29 前后到期）
+
+### 注册表（2026-09-18.1 → 2026-09-22.1）
+- 新增 `mimo-v2.6-flash` / `mimo-v2.6-pro`（confidence=tested，probe 结构化回填 outputTested 131072/imageInput ok-200/toolCall ok-200）；OpenRouter 官方系路由（xiaomi/mimo-v2.6-*，ctx 1048576 元数据一致）与 UltraSpeed 独立 id（10 倍价）入 quirks/familyNote 注记
+- **跨代能力反转警示入 familyNote**：v2.6 全系全模态 ≠ v2.5-pro 纯文本（v2.5-pro 8 月实测 404 拒图），alias 刻意无重叠；「mimo pro」仍唯一命中 v2.5-pro 旧档（回归实测），familyNote 写明命中后须亮牌代际差
+- v2.5 两条件目 lastVerified 刷新 + 邀测退役挂账；1M 输入上限为 OpenRouter 元数据口径（未做输入探针，quirks 已注明）
+- 活跃条目公共 19/私有 5 = 24（v2.6 两条新增）；validate 0 error 3 warn（既有中转预期）；回归：「mimo flash」unique、「mimo v2.6」ambiguous 二选一、「mimo pro」unique v2.5-pro（亮牌规则）、墓碑场景不受影响
+
+### 遗留
+- 输入上限未做两档探针（1M 为元数据+家族口径）；邀测 9/29 前后到期，届时需复验 v2.5 两条 id，死则转墓碑
+- UltraSpeed 档（mimo-v2.6-pro-ultraspeed，$4.35/$8.7 每百万）未收录，用户需要时走读文档流程
+- 官方 /v1/models 需 key（401），元数据白拿姿势对小米平台不适用——探针分级表「Moonshot 系同走此路」不适用小米，已在条目注记用 OpenRouter 替代
+
+## 2026-09-18 — v1.17.0（V4.1-Flash 收编 vision-exp + GLM-5.3-FlashX 收录 + V4-Pro 生命周期更新，注册表版本 2026-09-18.1）
+
+背景：用户提出两个新模型（deepseek v4.1flash / GLM5.3FLASHX）。第一性原理拆解后定位真实缺口：不是「有新模型就塞表」，而是 ①数据保鲜（官方生命周期变动）②新条目证据分级。全程信源：DeepSeek 官方 pricing 页一手 fetch + 智谱官方 docs 定点搜索（std/pro+domain filter、sogou）。
+
+### DeepSeek 侧（官方 pricing 页实证 2026-09-18）
+- **新增 `deepseek-v4.1-flash`（documented）**：9/10 发布，model=deepseek-flash，1M/384K 官方口径，原生 vision（官方 features 表 Vision ✓）；552B MoE 新架构（输入激活 8B/输出 16B）。接入时全量探针
+- **旧 `deepseek-v4-flash-vision-exp` 条目下线，未做墓碑而是收编 alias**：官方明确旧名 deepseek-v4-flash / deepseek-v4-flash-vision-exp「仍被接受但模型已退役，请求由 V4.1-Flash 服务按 Flash 价计费」——这是「半退役 alias」新形态：短路成墓碑会误判旧 id 已死（请求实际仍成功），收编为 alias + verifiedBy 注记最忠实。vision-exp 的历史探针（两门图片 200）随 CHANGELOG 留档
+- **`deepseek-v4-pro` 生命周期更新**：9/10 官方宣布 9/14 下线路由 Flash → 9/11 官方撤回，继续服务计费不变（pricing 页脚注 2）；verifiedBy 补路由风险注记（V4.1-Pro 未发布前请求可能被路由 Flash 按 Flash 价计费）
+
+### 智谱侧（证据边界明确标注）
+- **新增 `glm-5.3-flashx`（estimate）**：唯一证据 = bigmodel.cn 官网首页快照（sogou 溯源）「GLM-5.3-FlashX 原生多模态模型，推理速度最高可达 200 tokens/s」；官方 docs（模型概览/定价/发布记录）均未收录，首页轮播卡 9/18 当天已消失（疑似灰度/内测/刚上即调整）；modelId glm-5.3-flashx 为命名惯例推断（docs 模型概览列有 glm-4.7-flashx 前代先例佐证），上限沿用家族估值。quirk 级警示写入 verifiedBy：接入必全量探针 + 实时模型列表核对，404 即转读文档流程
+- 另核实 GLM-5.3-Flash（local 表 8/27 tested 条目）已全量上线标准 API（docs 1M/128K、定价 0.8/2.8 元每百万、Coding Plan 3 倍额度），local 条目无需改动
+
+### 回归（match_registry.py 实测）
+- 新场景 16/17/18 入 tests/scenarios.md：「deepseek flash」/「ds vision」/「deepseek vision exp」/「deepseek 看图」→ unique v4.1-flash；「glm 5.3 flashx」/「flashx」→ unique；「deepseek v4 flash」→ ambiguous（官方新条目 vs 腾讯 TP 0731，key 发卡方分流）；「ox alpha」/「gpt4」墓碑短路不受影响
+- validate 0 error 3 warn（既有中转预期声明）；活跃条目公共 17/私有 5（vision-exp 下线、两条新增，公共表 16→17）
+
+### 遗留
+- glm-5.3-flashx 待官方 docs 收录后升级 confidence（estimate → documented）并核确切开定价；若为灰度仅订阅可见，考虑移 local 或标渠道限制
+- deepseek-v4.1-flash 接入时全量探针（documented 判级），输出上限 384K 为官方口径非实测
+- vision-exp 历史探针数据（imageInput ok-200 两门）已无对应在册条目，仅本 CHANGELOG 留档
+
+## 2026-09-09 — v1.16.0（probe.py 挂账三清 + deepseek 双门全量探针 + vision-exp 收录，注册表版本 2026-09-09.1）
+
+背景：9/7 回执拍板「接一个没接过的免费模型/聚合平台」任务落地——选 deepseek /anthropic 端点（documented-未实测），同 key 双门探针，一石三鸟（素材 + probe.py 三子命令真实 key 首测 + 烧账）。probe.py image/output-limit/tool 三子命令为 v1.10.0 起首次真实 key 实测（此前只验过编译+无 key 冒烟）。
+
+### 探针结果（key 从本地 models.json 管道读取，不进对话不落盘）
+- **OpenAI 门 probe.py 全量**：smoke 200（reasoning 默认开）｜tool ok｜**output-limit claimed_ok 384000 一次通过**（384K 是真值非假边界）｜**image 假接受实锤**——200 但 reasoning_content 自述 "We don't have image"，图片根本没进模型
+- **anthropic 门手动 curl 等价**（probe.py 只说 OpenAI 方言，anthropic 探针走 SKILL.md 允许的手动流程）：smoke 200 + 标准 Anthropic 格式（thinking 块带 signature）｜tool ok（tool_use + stop_reason=tool_use）｜image 假接受（同 OpenAI 门）
+- **vision-exp 条目发现与收录**：anthropic 门 400 错误信息曝光 `deepseek-v4-flash-vision-exp`（文档未单列）；两门图片探针均答 "Red" = 真支持。看图必须用它，v4-pro 两门都假接受
+- **文档打脸实证**：官方称「不认识的模型名自动映射 flash」——实测乱名 400 拒绝（错误信息列三个合法名）；claude-sonnet-4-5 → v4-flash 映射属实（响应 model 字段回显）
+
+### 注册表（2026-09-07.4 → 2026-09-09.1）
+- `deepseek-v4-pro`：probe 全量回填（outputTested 384000 / toolCall / imageInput 假接受标注），lastVerified → 2026-09-09；altProtocol status → tested-2026-09-09，新增 verified 明细（auth/modelId/thinking/tool/claude 别名映射/文档打脸警示）
+- 新增 `deepseek-v4-flash-vision-exp`（confidence=tested，仅图片经实测；tool/上限为家族占位未实测，quirks 高亮「必须全量探针」+「实验版随时可能变动」）
+- validate 0 error 3 warn（均为预期中转声明）；匹配回归：deepseek vision→unique、kimi k3→unique、ox alpha→墓碑短路
+- ⚠️ 过程教训：首次回写踩 7 个 schema 类型 ERROR（outputRejected 写了 null、toolCall 写 bool、supportsToolCall/Reasoning 写 null、上限写 null）——标准类型以 validate_registry.py 为准：null 不许写、未测键不写、结果码用字符串 "ok-200"；修正后 0 error
+
+### 遗留
+- probe.py 不支持 anthropic 方言（x-api-key + /v1/messages），anthropic 端点探针只能手动 curl——是否加子命令待用户拍板
+- vision-exp 的 tool/reasoning/上下限未实测，下次接入该条目时全量补
+- SKILL.md 版本号未动（无流程变更，纯数据更新）——若按「改注册表必同版号」惯例需用户裁量
+
+## 2026-09-07 — v1.15.0（新厂商线：MiniMax 官方直连 + 字节豆包，注册表版本 2026-09-07.4）
+
+背景：用户点头开新厂商线（明确只做两家，Google/Anthropic 暂不做）。
+
+### 注册表（2026-09-07.3 → 2026-09-07.4）
+- **新增 `minimax-m3-official`（MiniMax 开放平台官方直连）**：国内主域 api.minimaxi.com（国际 api.minimax.io 同构），OpenAI 兼容，modelId 大写驼峰 MiniMax-M3（quirk）；原生多模态（官方 curl 示例含 image_url）；thinking adaptive + max_completion_tokens 两条方言 quirk；1M ctx 多源一致；输出上限估值高亮。与 local tokenhub 中转条目、OpenRouter :free 条目构成三方歧义，按 key 发卡方分流（familyNote 已写明）
+- **新增 `doubao-seed-2.1-pro`（字节火山方舟直连）**：端点 ark.cn-beijing.volces.com/api/v3（V3 完全兼容 OpenAI 协议，官方下线公告实证）；**最大接入坑写入 quirk：model 字段传推理接入点 ID（ep-xxx）而非模型名，modelId 为占位符 REPLACE-WITH-ENDPOINT-ID，接入时必须向用户索取其 ep- ID**；旗舰 Doubao-Seed-2.1-pro（¥6/30 每百万）+turbo/Seed-Code/Evolving 家族注记
+- **trustedDomains 补录**：minimax（api.minimaxi.com / api.minimax.io）、bytedance（ark.cn-beijing.volces.com）；校验器随即正确将 local tokenhub 中转域名标为白名单外（门禁生效实证）
+- 活跃 20 条（公共 15/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error 3 warn（均为预期的中转声明）；回归：minimax m3→三方歧义（符合分流设计）、豆包/doubao pro→unique、kimi k3 不受影响
+- 信源：zhipu-web-search std×3 + sogou×1（MiniMax 官方文档原文 URL 定点），官方 curl 示例/下线公告为一手
+
+## 2026-09-07 — v1.14.0（条目级墓碑 + 旗舰补位，注册表版本 2026-09-07.3）
+
+背景：用户两连拍板（删除商汤；注册表补各家旗舰，第一性原理拆解后定位真实缺口）。
+
+### 注册表（2026-09-07.2 → 2026-09-07.3）
+- **商汤 SenseNova 停用（条目级墓碑机制首发）**：local 两条（sensenova/deepseek-v4-flash、sensenova/glm-5.2）标 `tombstone:true+removedOn+removedBy`，历史探针数据保留供复活复核；trustedDomains 移除 token.sensenova.cn；match_registry.py 新增 disabled 状态（exit 5，tombstone 条目剔除出命中/预填）；SKILL.md 墓碑短路节+匹配说明同步，tests #10/#14 更新
+- **阿里平台更名**：qwen-max/qwen-plus 加 `vendorNote`「千问AI平台（原阿里云百炼）」，keyIssuer 同步（信源=用户口述+长期记忆，dashscope 端点不受影响）
+- **旗舰补位（2026-09-07 搜索核实，zhipu-web-search std×4，多源一致）**：新增 `glm-5.3`（智谱文本旗舰 8/14 发布，开放平台 API 已开放，1M/128K 官方口径，思考强制 low/high/max 三档 quirk）与 `qwen3.8-max`（千问AI平台新一代基座旗舰）；`gpt-5.6-sol` 扩 familyNote（Sol 旗舰/Terra 均衡/Luna 轻量三档，Ultra 为模式非模型）+ 品牌别名 gpt5.6。新条目均 documented、token 上限为估值高亮，接入时全量探针。OpenAI/腾讯/DeepSeek/Kimi/小米旗舰已在册（Sol/hunyuan-turbos/v4-pro/k3/mimo-v2.5-pro），无缺口
+- 活跃 18 条（公共 13/私有 5）+ 停用墓碑 2 + 退役墓碑 2；validate 0 error；匹配回归：qwen3.8→unique、glm 5.3→ambiguous（主体/flash 防套错，符合预期）、gpt5.6→unique
+
+## 2026-09-07 — v1.13.0（渠道三元重构 + gpt4 复盘修补 + 公共表扩容六厂商）
+
+背景：gpt4 接入会话三问复盘（用户发现）+ 公共表覆盖审查（第一性原理 + 对抗性审查双模式）。核心发现：渠道真实结构是三元（厂商直连 / 云厂商托管 / 私有中转），旧「公共=官方直连、local=中转」二元定义容纳不了云渠道，导致 key↔渠道错配 401 无防护、云渠道实测条目被分发排除两个缺陷。
+
+### 注册表（版本 2026-09-07.1）
+- 条目新增 `channel`（direct / cloud-hosted / private-relay）、`keyIssuer`（发卡方）、`channelNote`（渠道差异与错配症状）三字段；存量 5 条补齐
+- 公共表定义推广：「有公开注册渠道即可入表」；**腾讯 Token Plan 两条 DeepSeek 条目自 local 升公共**（tested 数据保全，vendor 修正为 tencent-cloud——校验脚本抓出域名归属错配后按「vendor 填提供 url 的一方」规范修正）
+- 新增 4 条目：`hunyuan-turbos-latest`（腾讯混元直连，双源核实，altProtocol 记录 anthropic 兼容端点）、`qwen-max` / `qwen-plus`（阿里百炼兼容模式，官方文档）、`gpt-5.6-sol`（OpenAI 直连，官方指定替代模型）；新增条目 confidence=documented，token 上限为估值已高亮，接入时须全量探针
+- `trustedDomains` 补录：tencent-cloud（api.hunyuan.cloud.tencent.com / api.lkeap.cloud.tencent.com）、aliyun（dashscope.aliyuncs.com）、openai（api.openai.com）；校验 0 error
+- 墓碑 +1：`gpt-4`（2026-10-23 停服 → gpt-5.6-sol；「详情页无 deprecated 字样、弃用信息只在 deprecations 页」实证随条目存档）；match_registry.py "gpt4" 回归验证命中墓碑短路
+- local 表剩 7 条（纯 private-relay + Coding Plan 专属端点）
+
+### SKILL.md（v1.12.0 → v1.13.0，含 v1.11/v1.12 两次复盘修补）
+- v1.11：品牌级请求选型层（品牌词≠模型 id，先出实时菜单亮代际差；禁止默认映射最老同名模型）+「中止与回滚」节（回滚前先取证，零写入=无操作+出证据，禁止为显得执行了回滚而 touch 文件）
+- v1.12：品牌选型数据源纪律改「官方目录+官方 deprecations 页优先，OpenRouter 只作价格对照」；Step 1 升硬闸门 + 生命周期检查必查项（两页都要查）；「OpenRouter 唯一推荐」加适用边界（仅免费/试用发现场景，库存有 key 不构成绕过官方文档的理由）
+- v1.13：Step 0 双表定义按渠道三元重写 + 渠道铁律（快路径命中后核对 key 发卡方与 keyIssuer 一致）；自增长收录规则同步；元数据白拿补 Moonshot `/v1/models`（一次请求核上限+能力位）
+
+### 遗留
+- 品牌选型层对无官方目录页厂商（MiMo 等）无兜底表述；frontmatter description 未同步生命周期检查触发词；历史案例段落择机收敛 references/；审查问题1（机械闸门：Step 1 须产出文档 fetch 记录作前置产物）未落地
+
+## 2026-09-04 — v1.10.0（注册表 schema v2 + 脚本化 + 探针分级 + 协议失配树）
+
+背景：同类调研（2026-09-04）确认无正面竞品后，针对性能/健壮性/可维护性/兼容性四维做系统优化，原则是「降低纪律的执行成本，不稀释纪律」。
+
+### 注册表（schema v2，版本 2026-09-04.1）
+- 条目新增结构化字段：`lastVerified`（机器可读核验日期，探针分级判级依据）、`probe`（outputTested/outputRejected/imageInput/toolCall/contextTotal/contextPolicy）、`quirks`（请求/响应方言例外）、`altProtocol`（厂商双协议端点）；废弃 local 表旧字段 `inputProbed`/`outputProbed`
+- 公共表新增顶层 `trustedDomains`（厂商官方域名白名单，仅收录实证域名）——带 key 请求的前置门禁
+- 墓碑新增 `recheckAfter`（免复核期）
+- 合并语义定死：条目级整体替换（local 优先），不做字段级拼接
+- 13 条条目全部迁移
+
+### scripts/（新增，stdlib-only）
+- `probe.py`：smoke / output-limit（先验后二分，8 轮上限）/ image（内嵌生成 1x1 红 PNG）/ tool / input-limit（错误体披露，大 pad 须 --confirm）/ context-metadata（OpenRouter 元数据白拿）；内建 429 退避熔断（2s→8s→30s）与 `--expect-domain` 域名门禁；key 可经 stdin 传入避免进进程列表
+- `match_registry.py`：加载/条目级合并/墓碑短路/规范化子串匹配/口语前后缀剥离重试，四态输出（unique/ambiguous/miss/tombstone）
+- `validate_registry.py`：schema 校验、alias 跨条目碰撞、域名白名单核对（public=ERROR / local=WARN）、tested 缺 lastVerified 提醒、local 换端点提醒
+
+### SKILL.md（v1.9.3 → v1.10.0）
+- 新增「探针分级」：tested+新鲜 → 轻验证；documented/过期/覆盖改动 → 全量；用户可显式跳过（tested only）；探针预算声明（防烧穿免费档当日额度）
+- 新增「错误码决策表」（401/404/400/429/5xx 查表行动）与 429 退避熔断硬规则
+- 新增 0.6「协议失配检查」：宿主协议 ≠ 端点协议时三选一（双协议端点 / env shim / 明示不支持转参数卡），失配未解决禁止写配置
+- 隐私红线新增第 5 条「域名白名单」；免费发现层加 jq 过滤（禁全量入上下文）与 context_length 白拿
+- 新增输入上限两档廉价探针（元数据/错误体披露），废止「输入上限无实时探针」旧表述；新增请求形态对齐验证（stream + 哑工具，暴露方言问题入 quirks）
+- description 从 2591 字符瘦身至约 700（触发短语原文全保留），机制细节移正文
+
+### 配套
+- `tests/scenarios.md`：15 条金标准回归场景
+- CI：`.github/workflows/validate-registries.yml`，push/PR 触发注册表校验
+- 宿主知识拆分（hosts/ 渐进披露）与 L2 表单宿主字段映射（Cherry Studio/ChatBox 等）留待 v2.0 规划
+
+历史版本见 sichen-skills 仓库 git log。

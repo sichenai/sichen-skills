@@ -24,6 +24,8 @@
 | 18 | 「接 deepseek v4 flash」 | ambiguous（腾讯 TP 0731 条目 vs 官方 v4.1-flash）→ 单条提问二选一：key 发卡方核对（sk-tp- 腾讯 TP vs platform.deepseek.com 官方）；这也是渠道铁律的标准触发场景 |
 | 19 | 「接 mimo flash」/「接 mimo v2.6」 | 「mimo flash」唯一命中 v2.6-flash（tested 且无生命周期风险信号 → 轻验证）；「mimo v2.6」ambiguous 二选一（flash vs pro），禁止自行挑；「mimo pro」唯一命中 v2.5-pro 旧档 → 先亮牌代际差（v2.6 全模态 vs v2.5-pro 纯文本 + 退役风险：v2.5 已挂 2026-10-21 下线注记 → 命中生命周期风险信号先轻查再确认） |
 | 20 | v2.5 旧 id 接入（邀测已过 2026-09-29 后） | 先 smoke 复验：200 → 按注册表注记正常接（风险自担）；404 → 转 v2.6 家族条目推荐替代，v2.5 条目转墓碑 |
+| 21 | fast_connect fix/run 处理期间宿主文件被外部改写（UI 保存/重启重写 models.json） | 写前 sig+内容双比对命中 → `conflict:true` 中止不覆盖，请重跑；禁止旧快照覆盖宿主新状态（10/21 复审 P2 修复的行为基线） |
+| 22 | 外部终端（无 App env）接入：Step -1 ④ 预检 / fast_connect 宿主加载验证 | 带 `CODEBUDDY_FORCE_LITE_WB_BUNDLE=1` 调 codebuddy --help 正常出列表（脚本已内建注入）；裸跑秒崩 `Cannot find module` 属环境坑 → 交付降级「配置+探针通过、加载验证登记 backlog」，禁止接入会话内排障宿主；宿主 CLI 连续失败 2 次即止损、外部进程等待 ≤90s 时间盒（10/27 实证：-p 排障烧 ≈15 回合，主回合 32% 耗在阻塞等待） |
 
 ## 判定纪律
 
